@@ -119,3 +119,44 @@
 - Implement monitoring for SMS delivery status
 - Add retry logic for failed SMS deliveries
 - Create a dashboard for tracking SMS delivery metrics
+
+## 2025-03-21: Email Queue Implementation
+
+### Completed Tasks
+
+- **Email Queue System**:
+  - Created two separate queues for email processing: `send-email-queue` for immediate delivery and `scheduled-email-queue` for scheduled emails.
+  - Implemented email schema validation using Zod with required fields: `to`, `subject`, `html`, `contactId`, and `workspaceId`.
+  - Added email workers to process both immediate and scheduled email jobs.
+  - Updated the Bull Board UI to display and monitor email queues.
+
+- **Email API Integration**:
+  - Integrated email sending functionality with the external email API at `/api/email/send`.
+  - Implemented email workers to process both immediate and scheduled email jobs and send them to the API.
+  - Created a test script (`test-email-queues.ts`) to validate the end-to-end email sending process.
+
+- **UI for Testing**:
+  - Created a user-friendly UI for testing email scheduling (`test-email.html`).
+  - Added a landing page with links to all test UIs and API documentation.
+  - Implemented proper static file serving for the UI files.
+
+- **API Endpoints**:
+  - Added `/api/schedule-email` endpoint for scheduling emails with optional delay.
+  - Updated the API to handle both immediate and scheduled email delivery.
+
+- **Environment Configuration**:
+  - Added environment variables for Email API URL.
+  - Updated documentation to reflect the new email functionality.
+
+### Lessons Learned
+
+- When deploying to production, it's important to use a reliable method for serving static files that works across different environments.
+- Using `process.cwd()` is more reliable than `import.meta.url` for determining file paths in production environments.
+- Providing a comprehensive landing page with links to all functionality makes testing and demonstration easier.
+
+### Next Steps
+
+- Monitor the email sending process to ensure messages are being delivered correctly.
+- Add more comprehensive logging for API responses.
+- Implement retry logic for failed API calls.
+- Consider adding metrics to track email delivery rates and failures.

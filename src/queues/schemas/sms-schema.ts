@@ -10,7 +10,10 @@ export const smsSchema = z.object({
   // Contact ID for the recipient
   contactId: z.string().default("5346834e-479f-4c5f-a53c-7bf97837fd68"),
   // Workspace ID
-  workspaceId: z.string().or(z.number()).default("66338"),
+  workspaceId: z.union([
+    z.string().default("66338"),
+    z.number()
+  ]),
   // Additional metadata (optional)
   metadata: z.record(z.any()).optional(),
 });

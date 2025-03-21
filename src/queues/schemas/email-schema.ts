@@ -12,7 +12,10 @@ export const emailSchema = z.object({
   // Contact ID for the recipient
   contactId: z.string().min(1, "Contact ID is required"),
   // Workspace ID
-  workspaceId: z.string().or(z.number()).min(1, "Workspace ID is required"),
+  workspaceId: z.union([
+    z.string().min(1, "Workspace ID is required"),
+    z.number().min(1, "Workspace ID is required")
+  ]),
   // Additional metadata (optional)
   metadata: z.record(z.any()).optional(),
 });

@@ -233,3 +233,101 @@ When connecting to Redis from a local environment to a remote instance:
    - **Public URL**: May be accessible but could have security implications (e.g., `redis-production-c503.up.railway.app`).
 
 3. **Deployment Strategy**: For reliable operation, it's best to deploy both the worker and the queue service in the same environment (e.g., both on Railway) to ensure stable Redis connectivity.
+
+## Email Queue Implementation
+
+### Static File Serving in Production
+
+- **Problem**: When deploying to production, static file serving using `import.meta.url` with ES modules didn't work as expected, resulting in 404 errors for static files.
+
+- **Solution**: Use `process.cwd()` instead of `import.meta.url` for determining file paths in production environments:
+
+```typescript
+// Before (problematic in production)
+fastify.register(fastifyStatic, {
+  root: path.join(path.dirname(fileURLToPath(import.meta.url)), "../public"),
+  prefix: "/static",
+});
+
+// After (works reliably in production)
+fastify.register(fastifyStatic, {
+  root: path.join(process.cwd(), "public"),
+  prefix: "/static",
+});
+```
+
+- **Lesson**: When working with file paths in Node.js applications that will be deployed to different environments, prefer using `process.cwd()` which is more reliable across different runtime environments and build processes.
+
+### Queue Structure for Email Processing
+
+- **Pattern**: Similar to the SMS queue structure, we created separate queues for immediate and scheduled email delivery.
+
+- **Benefits**:
+  - Consistent pattern across different message types (SMS and email)
+  - Better organization and monitoring of different job types
+  - Ability to apply different processing strategies to immediate vs. scheduled emails
+
+- **Implementation**:
+```typescript
+// Regular email queue
+export const sendEmailQueue = new Queue("send-email-queue", {
+  connection,
+  defaultJobOptions,
+});
+
+// Scheduled email queue
+export const scheduledEmailQueue = new Queue("scheduled-email-queue", {
+  connection,
+  defaultJobOptions,
+});
+```
+
+### API Endpoint Design
+
+- **Pattern**: We designed the email scheduling API endpoint to be similar to the SMS endpoint for consistency.
+
+- **Benefits**:
+  - Consistent API design makes integration easier for clients
+  - Similar error handling and response formats
+  - Reusable patterns for validation and job creation
+
+- **Implementation**:
+```typescript
+// API endpoint for scheduling Email
+fastify.post<{
+  Body: {
+    to: string;
+    subject: string;
+    html: string;
+    contactId: string;
+    workspaceId: string;
+    delay: number;
+    metadata?: Record<string, any>;
+  };
+}>("/api/schedule-email", async (request, reply) => {
+  // Similar structure to SMS endpoint
+  // ...
+});
+```
+
+### UI Testing Design
+
+- **Pattern**: Created a comprehensive UI for testing email functionality, similar to the SMS testing UI.
+
+- **Benefits**:
+  - Provides an easy way to test the API without writing code
+  - Includes validation and error handling
+  - Offers visual feedback on the results
+
+- **Lesson**: Having a well-designed testing UI significantly speeds up development and debugging by making it easy to test different scenarios without writing custom code.
+
+### Environment Variables Management
+
+- **Pattern**: Added environment variables for the Email API URL, similar to the SMS API URL.
+
+- **Benefits**:
+  - Consistent configuration pattern
+  - Flexibility to change the API URL without code changes
+  - Environment-specific configuration
+
+- **Lesson**: Centralizing configuration in environment variables makes the application more flexible and easier to deploy to different environments.
