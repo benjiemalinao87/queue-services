@@ -1,10 +1,10 @@
 import { sendSMSWorker, scheduledSMSWorker } from "./sms-worker";
 import { emailWorker, scheduledEmailWorker } from "./email-worker";
+import { Worker } from "bullmq";
+import { env } from "../env";
 
-// Set environment variables for Railway Redis public URL
-process.env.REDIS_HOST = "redis-production-c503.up.railway.app";
-process.env.REDIS_PORT = "6379";
-process.env.REDIS_PASSWORD = "fbYziATslDdWOVGqlpsXPZThAwbSzbgz";
+// Use environment variables for Redis configuration
+// DO NOT hardcode credentials here
 
 // Handle graceful shutdown
 const gracefulShutdown = async () => {
@@ -28,7 +28,7 @@ process.on("SIGINT", gracefulShutdown);
 
 console.log("Workers started successfully");
 console.log("Redis connection:", {
-  host: process.env.REDIS_HOST,
-  port: process.env.REDIS_PORT,
-  password: process.env.REDIS_PASSWORD ? "******" : undefined,
+  host: env.REDIS_HOST,
+  port: env.REDIS_PORT,
+  password: env.REDIS_PASSWORD ? "******" : undefined,
 });

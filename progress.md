@@ -160,3 +160,41 @@
 - Add more comprehensive logging for API responses.
 - Implement retry logic for failed API calls.
 - Consider adding metrics to track email delivery rates and failures.
+
+## 2025-03-21: Production Deployment and Testing
+
+### Completed Tasks
+
+- **Schema Validation Fixes**:
+  - Fixed Zod schema validation issues for both email and SMS schemas.
+  - Updated union type validation to use `z.union()` instead of `z.string().or(z.number())` to properly handle validation for both string and number types.
+  - Successfully tested schema validation with various input types.
+
+- **Static File Serving**:
+  - Simplified static file serving configuration to serve files directly from the root path.
+  - Removed custom route handlers for serving HTML files, allowing the static plugin to handle them directly.
+  - Updated the static file serving configuration to use the correct paths for production.
+
+- **API Testing**:
+  - Successfully tested both email and SMS API endpoints using curl.
+  - Verified that both immediate and scheduled jobs are being added to the queues correctly.
+  - Confirmed that the Bull Board UI is accessible and displaying the correct queue information.
+
+- **Documentation Updates**:
+  - Updated the instructions.md file with current environment variables.
+  - Added comprehensive API testing examples using curl.
+  - Documented the Bull Board UI access and authentication.
+  - Provided detailed integration instructions for other applications.
+
+### Lessons Learned
+
+- When using union types in Zod, validation methods like `.min()` cannot be chained directly on the union. Instead, they must be applied to each member of the union separately.
+- Always implement and test API endpoints independently from UI components. This allows you to verify core functionality even when there are issues with the UI layer.
+- Breaking down troubleshooting into smaller, focused steps helps isolate and fix issues more effectively than trying to solve everything at once.
+
+### Next Steps
+
+- Continue troubleshooting static file serving issues for the test UI.
+- Implement comprehensive monitoring for both email and SMS delivery.
+- Add more detailed logging for API requests and responses.
+- Consider implementing a webhook system for delivery status notifications.

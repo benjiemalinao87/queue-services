@@ -1,9 +1,9 @@
 import IORedis from "ioredis";
 
-// Redis server details (using proxy)
-const REDIS_HOST = "caboose.proxy.rlwy.net";
-const REDIS_PORT = 58064;
-const REDIS_PASSWORD = "fbYziATslDdWOVGqlpsXPZThAwbSzbgz";
+// Redis server details from environment variables
+const REDIS_HOST = process.env.REDIS_HOST || "localhost";
+const REDIS_PORT = parseInt(process.env.REDIS_PORT || "6379", 10);
+const REDIS_PASSWORD = process.env.REDIS_PASSWORD;
 
 async function testRedisPing() {
   console.log(`=== Testing Redis Connection to ${REDIS_HOST}:${REDIS_PORT} ===`);

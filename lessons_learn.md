@@ -331,3 +331,77 @@ fastify.post<{
   - Environment-specific configuration
 
 - **Lesson**: Centralizing configuration in environment variables makes the application more flexible and easier to deploy to different environments.
+
+## Troubleshooting Production Deployments
+
+### Zod Schema Validation Issues
+
+- **Problem**: When using Zod for schema validation, we encountered an error: `TypeError: __WEBPACK_EXTERNAL_MODULE_zod__.z.string(...).or(...).min is not a function`.
+
+- **Solution**: When using union types in Zod, validation methods like `.min()` cannot be chained directly on the union. Instead, they must be applied to each member of the union separately:
+
+```typescript
+// Incorrect:
+workspaceId: z.string().or(z.number()).min(1, "Workspace ID is required"),
+
+// Correct:
+workspaceId: z.union([
+  z.string().min(1, "Workspace ID is required"),
+  z.number().min(1, "Workspace ID is required")
+]),
+```
+
+- **Lesson**: When using type unions with validation libraries like Zod, make sure to understand how method chaining works with union types. Validation methods typically need to be applied to each member of the union separately rather than to the union itself.
+
+### API Testing vs UI Testing
+
+- **Problem**: While the UI routes were not accessible due to static file serving issues, the API endpoints were still functioning correctly.
+
+- **Solution**: Use direct API testing with tools like curl to verify functionality when UI testing is not possible:
+
+```bash
+curl -X POST https://queue-services-production.up.railway.app/api/schedule-email \
+  -H "Content-Type: application/json" \
+  -d '{"to":"test@example.com","subject":"Test Email","html":"<p>This is a test email</p>","contactId":"123456","workspaceId":"66338","delay":0}'
+```
+
+- **Lesson**: Always implement and test API endpoints independently from UI components. This allows you to verify core functionality even when there are issues with the UI layer.
+
+### Incremental Troubleshooting
+
+- **Problem**: When facing multiple issues in a production deployment, it can be challenging to identify and fix each problem.
+
+- **Solution**: Use an incremental approach to troubleshooting:
+  1. First, verify if the application is running at all (health check)
+  2. Test core functionality via APIs directly
+  3. Check monitoring interfaces (Bull Board)
+  4. Address UI and static file issues separately
+
+- **Lesson**: Breaking down troubleshooting into smaller, focused steps helps isolate and fix issues more effectively than trying to solve everything at once.
+
+## Security Best Practices
+
+### Secure Credential Management
+
+- **Problem**: Hardcoded credentials were accidentally committed to the GitHub repository, exposing sensitive Redis connection information.
+
+- **Solution**: 
+  1. Remove all hardcoded credentials from the codebase
+  2. Use environment variables for all sensitive information
+  3. Create a `.env.example` file with placeholder values as documentation
+  4. Add sensitive files to `.gitignore`
+  5. Use Railway's built-in environment variable management for deployment
+
+- **Lesson**: Never hardcode credentials in your codebase, even in test files. Always use environment variables and ensure that files containing actual credentials are included in `.gitignore`. Regularly scan your codebase for potential credential leaks before committing changes.
+
+### Credential Rotation After Exposure
+
+- **Problem**: Once credentials are exposed in a Git repository, simply removing them is not enough as they remain in the Git history.
+
+- **Solution**:
+  1. Immediately rotate (change) all exposed credentials
+  2. Update environment variables in all deployment environments
+  3. Consider using Git history rewriting tools for critical security issues (with caution)
+  4. Set up automated scanning tools to detect credential leaks
+
+- **Lesson**: Treat any exposed credential as compromised and rotate it immediately. The Git history preserves all previous commits, so even if you remove credentials in a new commit, they remain accessible in the repository history.

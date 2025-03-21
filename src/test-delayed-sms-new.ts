@@ -4,8 +4,8 @@ import { env } from "./env";
 import fetch from "node-fetch";
 import IORedis from "ioredis";
 
-// Redis connection URL from Railway (using proxy)
-const REDIS_URL = "redis://default:fbYziATslDdWOVGqlpsXPZThAwbSzbgz@caboose.proxy.rlwy.net:58064";
+// Redis connection URL from environment variables
+const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 
 // Function to send SMS via the API
 async function sendSMSViaAPI(data: SMSData) {
@@ -50,17 +50,17 @@ async function testDelayedSMS() {
   const redis = new IORedis(REDIS_URL);
   
   redis.on("connect", () => {
-    console.log("✅ Connected to Redis");
+    console.log("Connected to Redis");
   });
   
   redis.on("error", (err) => {
-    console.error("❌ Redis error:", err.message);
+    console.error("Redis error:", err.message);
   });
   
   try {
     // Try to ping Redis
     const pingResult = await redis.ping();
-    console.log(`✅ Redis ping result: ${pingResult}`);
+    console.log(`Redis ping result: ${pingResult}`);
     
     // Create a unique queue name for this test
     const queueName = `test-delayed-sms-${Date.now()}`;

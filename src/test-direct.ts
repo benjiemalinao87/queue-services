@@ -1,21 +1,24 @@
 import { Queue } from 'bullmq';
 import axios from 'axios';
+import IORedis from "ioredis";
 
 // Connection configuration for the direct Redis instance
-const connection = {
-  host: 'redis.customerconnects.app',
-  port: 6379,
-  username: 'default',
-  password: 'fbYziATslDdWOVGqlpsXPZThAwbSzbgz',
+const redisConfig = {
+  host: process.env.REDIS_HOST || 'localhost',
+  port: parseInt(process.env.REDIS_PORT || '6379', 10),
+  password: process.env.REDIS_PASSWORD,
+  connectTimeout: 10000,
+  maxRetriesPerRequest: 3,
+  retryStrategy: (times: number) => Math.min(times * 100, 3000),
 };
 
 // Create queue instances
-const myQueue = new Queue('my-queue', { connection });
-const sendEmailQueue = new Queue('send-email-queue', { connection });
+const myQueue = new Queue('my-queue', { connection: redisConfig });
+const sendEmailQueue = new Queue('send-email-queue', { connection: redisConfig });
 
 async function testDirectConnection() {
   console.log("=== Testing Direct Connection to Redis ===");
-  console.log("Redis Host: redis.customerconnects.app");
+  console.log("Redis Host:", redisConfig.host);
   
   try {
     // Test Bull Board UI
