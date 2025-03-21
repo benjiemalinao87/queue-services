@@ -38,12 +38,14 @@
     "test:delayed-sms-new": "rslib build && node dist/test-delayed-sms-new.js",
     "test:redis-ping-url": "rslib build && node dist/test-redis-ping-url.js",
     "test:redis-simple": "rslib build && node dist/test-redis-simple.js",
-    "test:redis-node": "rslib build && node dist/test-redis-node.js"
+    "test:redis-node": "rslib build && node dist/test-redis-node.js",
+    "test:email-queues": "rslib build && node dist/test-email-queues.js"
   },
   "dependencies": {
     "@bull-board/api": "^6.7.10",
     "@bull-board/fastify": "^6.7.10",
     "@bull-board/ui": "^6.7.10",
+    "@fastify/reply-from": "^12.0.2",
     "@fastify/static": "^8.1.1",
     "@t3-oss/env-core": "^0.12.0",
     "axios": "^1.8.4",

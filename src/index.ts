@@ -5,7 +5,7 @@ import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
 import path from "path";
 import { fileURLToPath } from "url";
-import { sendEmailQueue } from "./queues/email-queue";
+import { sendEmailQueue, scheduledEmailQueue } from "./queues/email-queue";
 import { myQueue } from "./queues/my-queue";
 import { sendSMSQueue, scheduledSMSQueue } from "./queues/sms-queue";
 import { env } from "./env";
@@ -26,6 +26,7 @@ createBullBoard({
   queues: [
     new BullMQAdapter(myQueue), 
     new BullMQAdapter(sendEmailQueue),
+    new BullMQAdapter(scheduledEmailQueue),
     new BullMQAdapter(sendSMSQueue),
     new BullMQAdapter(scheduledSMSQueue)
   ],
@@ -66,13 +67,18 @@ fastify.register(serverAdapter.registerPlugin(), {
 
 // Register static file serving for the UI
 fastify.register(fastifyStatic, {
-  root: path.join(__dirname, "../public"),
-  prefix: "/ui",
+  root: path.join(path.dirname(fileURLToPath(import.meta.url)), "../public"),
+  prefix: "/static",
 });
 
 // UI route for testing SMS scheduling
 fastify.get("/test-sms", async (request, reply) => {
-  return reply.sendFile("test-sms.html", path.join(__dirname, "../public"));
+  return reply.redirect("/static/test-sms.html");
+});
+
+// UI route for testing Email scheduling
+fastify.get("/test-email", async (request, reply) => {
+  return reply.redirect("/static/test-email.html");
 });
 
 // API endpoint for scheduling SMS
@@ -139,6 +145,77 @@ fastify.post<{
     return reply.code(500).send({
       success: false,
       message: `Error scheduling SMS: ${error instanceof Error ? error.message : String(error)}`,
+    });
+  }
+});
+
+// API endpoint for scheduling Email
+fastify.post<{
+  Body: {
+    to: string;
+    subject: string;
+    html: string;
+    contactId: string;
+    workspaceId: string;
+    delay: number;
+    metadata?: Record<string, any>;
+  };
+}>("/api/schedule-email", async (request, reply) => {
+  try {
+    const { to, subject, html, contactId, workspaceId, delay, metadata } = request.body;
+    
+    // Validate required fields
+    if (!to || !subject || !html || !contactId || !workspaceId) {
+      return reply.code(400).send({
+        success: false,
+        message: "Missing required fields",
+      });
+    }
+    
+    // Prepare Email data
+    const emailData = {
+      to,
+      subject,
+      html,
+      contactId,
+      workspaceId,
+      metadata: metadata || {
+        source: "api",
+        timestamp: new Date().toISOString(),
+        callbackEndpoint: "/api/email/send"
+      },
+    };
+    
+    let job;
+    
+    // Add to appropriate queue based on delay
+    if (delay && delay > 0) {
+      // Add to scheduled queue with delay
+      job = await scheduledEmailQueue.add("scheduled-email", emailData, {
+        delay,
+        removeOnComplete: false,
+      });
+      
+      fastify.log.info(`Scheduled Email job added with ID: ${job.id}, delay: ${delay}ms`);
+    } else {
+      // Add to immediate queue
+      job = await sendEmailQueue.add("send-email", emailData, {
+        removeOnComplete: false,
+      });
+      
+      fastify.log.info(`Immediate Email job added with ID: ${job.id}`);
+    }
+    
+    return {
+      success: true,
+      jobId: job.id,
+      message: delay > 0 ? "Email scheduled successfully" : "Email queued for immediate delivery",
+    };
+  } catch (error) {
+    fastify.log.error(`Error scheduling Email: ${error}`);
+    return reply.code(500).send({
+      success: false,
+      message: `Error scheduling Email: ${error instanceof Error ? error.message : String(error)}`,
     });
   }
 });

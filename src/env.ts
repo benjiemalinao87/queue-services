@@ -20,6 +20,9 @@ export const env = createEnv({
     // SMS API
     SMS_API_URL: z.string().default("https://cc.automate8.com"),
     
+    // Email API
+    EMAIL_API_URL: z.string().default("https://cc.automate8.com"),
+    
     // Server
     PORT: z.coerce.number().default(3000),
     HOST: z.string().default("0.0.0.0"),
@@ -39,6 +42,9 @@ export const env = createEnv({
     
     // SMS API
     SMS_API_URL: "https://cc.automate8.com",
+    
+    // Email API
+    EMAIL_API_URL: "https://cc.automate8.com",
     
     // Server
     PORT: process.env.PORT,

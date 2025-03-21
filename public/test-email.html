@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Scheduling Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+    }
+    h1 {
+      color: #0070c9;
+      margin-bottom: 30px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+      font-family: inherit;
+    }
+    textarea {
+      height: 150px;
+      resize: vertical;
+    }
+    button {
+      background-color: #0070c9;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #005ba1;
+    }
+    .response {
+      margin-top: 30px;
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+      white-space: pre-wrap;
+      display: none;
+    }
+    .success {
+      border-color: #4CAF50;
+      background-color: #e8f5e9;
+    }
+    .error {
+      border-color: #F44336;
+      background-color: #ffebee;
+    }
+    .html-preview {
+      margin-top: 20px;
+      border: 1px solid #ddd;
+      padding: 15px;
+      border-radius: 5px;
+      background-color: white;
+    }
+  </style>
+</head>
+<body>
+  <h1>Email Scheduling Test</h1>
+  
+  <form id="emailForm">
+    <div class="form-group">
+      <label for="to">Recipient Email:</label>
+      <input type="email" id="to" name="to" required placeholder="recipient@example.com">
+    </div>
+    
+    <div class="form-group">
+      <label for="subject">Subject:</label>
+      <input type="text" id="subject" name="subject" required placeholder="Your email subject">
+    </div>
+    
+    <div class="form-group">
+      <label for="html">Email Content (HTML):</label>
+      <textarea id="html" name="html" required placeholder="<h1>Hello!</h1><p>This is your email content.</p>"></textarea>
+    </div>
+    
+    <div class="form-group">
+      <label for="preview">Preview:</label>
+      <div id="preview" class="html-preview"></div>
+    </div>
+    
+    <div class="form-group">
+      <label for="contactId">Contact ID:</label>
+      <input type="text" id="contactId" name="contactId" required value="289d0731-d103-4042-92fa-1530d3cd8c02">
+    </div>
+    
+    <div class="form-group">
+      <label for="workspaceId">Workspace ID:</label>
+      <input type="text" id="workspaceId" name="workspaceId" required value="66338">
+    </div>
+    
+    <div class="form-group">
+      <label for="delay">Delay (ms):</label>
+      <input type="number" id="delay" name="delay" value="0" min="0" step="1000">
+      <small>0 for immediate delivery, or milliseconds to delay (e.g., 60000 for 1 minute)</small>
+    </div>
+    
+    <button type="submit">Schedule Email</button>
+  </form>
+  
+  <div id="response" class="response"></div>
+  
+  <script>
+    document.getElementById('emailForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const to = document.getElementById('to').value;
+      const subject = document.getElementById('subject').value;
+      const html = document.getElementById('html').value;
+      const contactId = document.getElementById('contactId').value;
+      const workspaceId = document.getElementById('workspaceId').value;
+      const delay = parseInt(document.getElementById('delay').value, 10);
+      
+      const responseElement = document.getElementById('response');
+      responseElement.className = 'response';
+      responseElement.style.display = 'block';
+      responseElement.textContent = 'Sending request...';
+      
+      try {
+        const response = await fetch('/api/schedule-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            to,
+            subject,
+            html,
+            contactId,
+            workspaceId,
+            delay,
+            metadata: {
+              source: 'test-ui',
+              timestamp: new Date().toISOString(),
+              callbackEndpoint: '/api/email/send'
+            }
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          responseElement.className = 'response success';
+          responseElement.textContent = 'Success!\n\n' + JSON.stringify(data, null, 2);
+        } else {
+          responseElement.className = 'response error';
+          responseElement.textContent = 'Error!\n\n' + JSON.stringify(data, null, 2);
+        }
+      } catch (error) {
+        responseElement.className = 'response error';
+        responseElement.textContent = 'Error!\n\n' + error.message;
+      }
+    });
+    
+    // Live preview of HTML content
+    document.getElementById('html').addEventListener('input', (e) => {
+      document.getElementById('preview').innerHTML = e.target.value;
+    });
+    
+    // Initialize preview
+    document.getElementById('html').value = '<h1>Welcome!</h1><p>Thank you for joining us.</p>';
+    document.getElementById('preview').innerHTML = document.getElementById('html').value;
+  </script>
+</body>
+</html>
