@@ -14,13 +14,6 @@ import { env } from "./env";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Extend FastifyReply type to include sendFile method
-declare module "fastify" {
-  interface FastifyReply {
-    sendFile(filename: string): FastifyReply;
-  }
-}
-
 const fastify = Fastify({ logger: true });
 
 const serverAdapter = new FastifyAdapter();
@@ -76,23 +69,13 @@ fastify.register(serverAdapter.registerPlugin(), {
 fastify.register(fastifyStatic, {
   root: path.join(process.cwd(), "public"),
   prefix: "/",
-  decorateReply: true
 });
 
-// UI route for testing SMS scheduling
-fastify.get("/test-sms", async (request, reply) => {
-  return reply.sendFile("test-sms.html");
-});
-
-// UI route for testing Email scheduling
-fastify.get("/test-email", async (request, reply) => {
-  return reply.sendFile("test-email.html");
-});
-
-// Root route for the landing page
-fastify.get("/", async (request, reply) => {
-  return reply.sendFile("index.html");
-});
+// Remove the custom route handlers since we're serving static files directly
+// The files will be accessible at:
+// - /test-sms.html
+// - /test-email.html
+// - /index.html
 
 // API endpoint for scheduling SMS
 fastify.post<{
