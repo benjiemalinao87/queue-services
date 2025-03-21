@@ -3,16 +3,33 @@ import type {
   DefaultJobOptions,
   QueueOptions,
   WorkerOptions,
+  JobsOptions,
 } from "bullmq";
 import { env } from "@/env";
 
-export const connection: ConnectionOptions = {
-  host: env.REDIS_HOST,
-  port: env.REDIS_PORT,
-  username: env.REDIS_USER,
-  password: env.REDIS_PASSWORD,
-  family: 0, // 4 (IPv4) or 6 (IPv6)
-};
+// Railway proxy details (for local development and testing)
+const RAILWAY_PROXY_HOST = 'caboose.proxy.rlwy.net';
+const RAILWAY_PROXY_PORT = 58064;
+
+// Determine which connection to use based on environment
+const isLocalDev = env.NODE_ENV === 'development';
+
+// Use the proxy for local development, and internal connection for production
+export const connection: ConnectionOptions = isLocalDev 
+  ? {
+      // Use Railway proxy for local development
+      host: RAILWAY_PROXY_HOST,
+      port: RAILWAY_PROXY_PORT,
+      password: env.REDIS_PASSWORD,
+    }
+  : {
+      // Use internal connection for production (when running on Railway)
+      host: env.REDIS_HOST,
+      port: env.REDIS_PORT,
+      username: env.REDIS_USER,
+      password: env.REDIS_PASSWORD,
+      family: 0, // 4 (IPv4) or 6 (IPv6)
+    };
 
 export const createJobOptions = (
   opts?: DefaultJobOptions,

@@ -21,16 +21,29 @@
     "check": "pnpm lint && pnpm typecheck",
     "prepare": "husky",
     "commitlint": "commitlint --edit",
-    "pre-commit": "lint-staged"
+    "pre-commit": "lint-staged",
+    "test:queues": "rslib build && node dist/test-queues.js",
+    "test:railway": "rslib build && node dist/test-railway.js",
+    "test:direct": "rslib build && node dist/test-direct.js",
+    "test:connections": "rslib build && node dist/test-connections.js",
+    "test:bull-board": "rslib build && node dist/test-bull-board.js",
+    "test:redis-config": "rslib build && node dist/test-redis-config.js",
+    "test:proxy-jobs": "rslib build && node dist/test-proxy-jobs.js",
+    "test:sms-queues": "rslib build && node dist/test-sms-queues.js",
+    "test:sms-api": "rslib build && node dist/test-sms-api.js"
   },
   "dependencies": {
     "@bull-board/api": "^6.7.10",
     "@bull-board/fastify": "^6.7.10",
     "@bull-board/ui": "^6.7.10",
     "@t3-oss/env-core": "^0.12.0",
+    "axios": "^1.8.4",
     "bullmq": "^5.43.1",
+    "dotenv": "^16.4.7",
     "fastify": "^5.2.1",
+    "node-fetch": "^3.3.2",
     "pm2": "^6.0.5",
+    "redis": "^4.7.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
@@ -43,6 +56,7 @@
     "eslint": "^9.22.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5.8.2"
   },
   "engines": {

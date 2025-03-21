@@ -3,3 +3,29 @@ services:
     image: redis:7
     ports:
       - 6379:6379
+    volumes:
+      - redis_data:/data
+    restart: always
+
+  api:
+    build: .
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    ports:
+      - 3000:3000
+    command: pnpm start:server
+
+  worker:
+    build: .
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    command: pnpm start:worker
+
+volumes:
+  redis_data:
