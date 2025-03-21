@@ -67,7 +67,7 @@ fastify.register(serverAdapter.registerPlugin(), {
 
 // Register static file serving for the UI
 fastify.register(fastifyStatic, {
-  root: path.join(path.dirname(fileURLToPath(import.meta.url)), "../public"),
+  root: path.join(process.cwd(), "public"),
   prefix: "/static",
 });
 
@@ -79,6 +79,11 @@ fastify.get("/test-sms", async (request, reply) => {
 // UI route for testing Email scheduling
 fastify.get("/test-email", async (request, reply) => {
   return reply.redirect("/static/test-email.html");
+});
+
+// Root route for the landing page
+fastify.get("/", async (request, reply) => {
+  return reply.redirect("/static/index.html");
 });
 
 // API endpoint for scheduling SMS
