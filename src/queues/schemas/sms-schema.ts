@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const smsSchema = z.object({
-  // Phone number of the recipient
+  // Phone number of the recipient (will be mapped to 'to' in the API)
   phoneNumber: z.string().min(1, "Phone number is required"),
   // Message content
   message: z.string().min(1, "Message is required"),

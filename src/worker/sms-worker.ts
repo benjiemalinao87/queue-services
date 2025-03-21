@@ -8,22 +8,35 @@ import fetch from "node-fetch";
 async function sendSMSViaAPI(data: SMSData) {
   const { phoneNumber, message, contactId, workspaceId, metadata } = data;
   
-  const response = await fetch(`${env.SMS_API_URL}/api/messages`, {
+  console.log("Sending message via API:", {
+    to: phoneNumber,
+    message,
+    contactId,
+    workspaceId,
+  });
+  
+  const response = await fetch(`${env.SMS_API_URL}/send-sms`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
       to: phoneNumber,
-      content: message,
-      contactId: contactId,
-      workspaceId: workspaceId,
-      ...metadata,
+      message,
+      contactId,
+      workspaceId,
+      ...(metadata || {}),
     }),
   });
   
   if (!response.ok) {
     const errorText = await response.text();
+    console.error("Missing required fields:", {
+      to: phoneNumber,
+      message,
+      workspaceId,
+      contactId
+    });
     throw new Error(`SMS API error: ${response.status} ${errorText}`);
   }
   

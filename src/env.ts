@@ -38,7 +38,7 @@ export const env = createEnv({
     BULL_BOARD_PASSWORD: process.env.BULL_BOARD_PASSWORD,
     
     // SMS API
-    SMS_API_URL: process.env.SMS_API_URL || "https://cc.automate8.com",
+    SMS_API_URL: "https://cc.automate8.com",
     
     // Server
     PORT: process.env.PORT,

@@ -136,3 +136,100 @@ export const connection: ConnectionOptions = isLocalDev
   ```
 
 - Validating job data before adding to the queue prevents invalid jobs from being added and provides better error messages.
+
+## SMS Queue Integration
+
+### Redis Connection Strategies
+When connecting to Redis from different environments, it's important to understand the various connection strategies:
+
+1. **Internal Network Connection**: Within Railway's network, services can connect to each other using internal hostnames like `redis.railway.internal`. This is secure and efficient but only works within Railway's network.
+
+2. **Proxy Connection**: Railway provides a proxy connection (e.g., `caboose.proxy.rlwy.net:58064`) that can be used from outside Railway's network. This is useful for development and testing from local environments.
+
+3. **Public URL Connection**: For services that need to be accessible from the public internet, Railway provides public URLs (e.g., `redis-production-c503.up.railway.app`). These should be used carefully with proper authentication.
+
+### API Integration Best Practices
+When integrating with external APIs like the SMS API:
+
+1. **Validation**: Always validate input data before sending it to the API to prevent errors and ensure data integrity.
+
+2. **Error Handling**: Implement comprehensive error handling to gracefully manage API failures and provide meaningful error messages.
+
+3. **Progress Tracking**: Use job progress updates to track the status of API calls and provide visibility into the process.
+
+4. **Logging**: Log important events and responses for debugging and monitoring purposes.
+
+5. **Retries**: Configure appropriate retry strategies for transient failures to improve reliability.
+
+### Queue Design Patterns
+Effective queue design patterns for SMS processing:
+
+1. **Separate Queues for Different Purposes**: Using separate queues for immediate and scheduled SMS messages improves organization and makes monitoring easier.
+
+2. **Scheduled Jobs**: BullMQ's delayed job feature is perfect for implementing scheduled SMS messages without needing a separate scheduling system.
+
+3. **Worker Specialization**: Creating specialized workers for different types of jobs (e.g., email vs. SMS) improves maintainability and allows for targeted scaling.
+
+4. **Schema Validation**: Using Zod for schema validation ensures that job data is properly formatted before processing, reducing errors during execution.
+
+5. **Graceful Shutdown**: Implementing proper shutdown procedures ensures that jobs are not lost when the service is stopped or restarted.
+
+## SMS API Integration
+
+### API Endpoint Configuration
+
+When integrating with external APIs, it's important to understand the correct endpoint structure:
+
+1. **Base URL**: The base URL should be configured as an environment variable (e.g., `SMS_API_URL: "https://cc.automate8.com"`).
+
+2. **Endpoint Path**: The specific endpoint path (e.g., `/send-sms`) should be appended to the base URL in the code.
+
+3. **Request Format**: Ensure that the request body matches the expected format of the API:
+   ```typescript
+   {
+     to: phoneNumber,
+     message: message,
+     contactId: contactId,
+     workspaceId: workspaceId,
+     ...additionalMetadata
+   }
+   ```
+
+4. **Required Fields**: Some APIs have required fields that must be included in every request. For our SMS API, `to`, `message`, and `workspaceId` are required fields.
+
+### Default Values for Required Fields
+
+When working with APIs that require specific fields:
+
+1. **Schema Defaults**: Use Zod schema defaults to provide fallback values for required fields:
+   ```typescript
+   contactId: z.string().default("5346834e-479f-4c5f-a53c-7bf97837fd68"),
+   workspaceId: z.string().or(z.number()).default("66338"),
+   ```
+
+2. **Validation**: Always validate the data before sending it to the API to ensure all required fields are present.
+
+3. **Error Handling**: Implement comprehensive error handling to catch and log specific error types, especially for missing required fields.
+
+### Field Naming Conventions
+
+When integrating with external APIs, pay attention to the field naming conventions:
+
+1. **API Expectations**: The SMS API expects `message` instead of `content` for the message text.
+
+2. **Consistent Naming**: Ensure consistent naming between your schema, worker, and API requests.
+
+3. **Testing**: Always test the API directly first to understand its requirements before integrating it with your queue system.
+
+### Redis Connection Challenges
+
+When connecting to Redis from a local environment to a remote instance:
+
+1. **Timeouts**: Connection timeouts are common when trying to connect to remote Redis instances from local environments.
+
+2. **Connection Options**:
+   - **Internal Network**: Only works within the same network (e.g., `redis.railway.internal` within Railway).
+   - **Proxy Connection**: Can work from external networks but may have limitations (e.g., `caboose.proxy.rlwy.net:58064`).
+   - **Public URL**: May be accessible but could have security implications (e.g., `redis-production-c503.up.railway.app`).
+
+3. **Deployment Strategy**: For reliable operation, it's best to deploy both the worker and the queue service in the same environment (e.g., both on Railway) to ensure stable Redis connectivity.

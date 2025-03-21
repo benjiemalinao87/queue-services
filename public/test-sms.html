@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMS Scheduler Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            font-family: inherit;
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        button {
+            background-color: #0070f3;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        button:hover {
+            background-color: #0051a8;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            display: none;
+        }
+        .success {
+            border-color: #4caf50;
+            background-color: #e8f5e9;
+        }
+        .error {
+            border-color: #f44336;
+            background-color: #ffebee;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: #0070f3;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <h1>SMS Scheduler Test</h1>
+    
+    <div class="form-group">
+        <label for="phoneNumber">Phone Number:</label>
+        <input type="text" id="phoneNumber" placeholder="+16263133690" value="+16263133690">
+    </div>
+    
+    <div class="form-group">
+        <label for="message">Message:</label>
+        <textarea id="message" placeholder="Your message here">This is a test scheduled SMS from the queue service.</textarea>
+    </div>
+    
+    <div class="form-group">
+        <label for="contactId">Contact ID:</label>
+        <input type="text" id="contactId" placeholder="5346834e-479f-4c5f-a53c-7bf97837fd68" value="5346834e-479f-4c5f-a53c-7bf97837fd68">
+    </div>
+    
+    <div class="form-group">
+        <label for="workspaceId">Workspace ID:</label>
+        <input type="text" id="workspaceId" placeholder="66338" value="66338">
+    </div>
+    
+    <div class="form-group">
+        <label for="delayType">Delay Type:</label>
+        <select id="delayType">
+            <option value="none">Send Immediately</option>
+            <option value="seconds">Seconds from now</option>
+            <option value="minutes" selected>Minutes from now</option>
+            <option value="hours">Hours from now</option>
+            <option value="specific">Specific Date/Time</option>
+        </select>
+    </div>
+    
+    <div class="form-group" id="delayValueGroup">
+        <label for="delayValue">Delay Value:</label>
+        <input type="number" id="delayValue" min="1" value="1">
+    </div>
+    
+    <div class="form-group" id="specificDateTimeGroup" style="display: none;">
+        <label for="specificDateTime">Date and Time:</label>
+        <input type="datetime-local" id="specificDateTime">
+    </div>
+    
+    <button id="sendButton">Schedule SMS</button>
+    
+    <div id="result" class="result"></div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const delayTypeSelect = document.getElementById('delayType');
+            const delayValueGroup = document.getElementById('delayValueGroup');
+            const specificDateTimeGroup = document.getElementById('specificDateTimeGroup');
+            const sendButton = document.getElementById('sendButton');
+            const resultDiv = document.getElementById('result');
+            
+            // Set default datetime for specific time option (15 minutes from now)
+            const defaultDate = new Date();
+            defaultDate.setMinutes(defaultDate.getMinutes() + 15);
+            document.getElementById('specificDateTime').value = formatDateForInput(defaultDate);
+            
+            // Toggle delay input fields based on selection
+            delayTypeSelect.addEventListener('change', function() {
+                if (this.value === 'specific') {
+                    delayValueGroup.style.display = 'none';
+                    specificDateTimeGroup.style.display = 'block';
+                } else {
+                    delayValueGroup.style.display = 'block';
+                    specificDateTimeGroup.style.display = 'none';
+                }
+            });
+            
+            // Handle form submission
+            sendButton.addEventListener('click', async function() {
+                const phoneNumber = document.getElementById('phoneNumber').value;
+                const message = document.getElementById('message').value;
+                const contactId = document.getElementById('contactId').value;
+                const workspaceId = document.getElementById('workspaceId').value;
+                const delayType = delayTypeSelect.value;
+                
+                if (!phoneNumber || !message) {
+                    showResult('Please fill in all required fields.', false);
+                    return;
+                }
+                
+                let delayMs = 0;
+                
+                if (delayType === 'specific') {
+                    const specificDateTime = new Date(document.getElementById('specificDateTime').value);
+                    const now = new Date();
+                    delayMs = specificDateTime.getTime() - now.getTime();
+                    
+                    if (delayMs < 0) {
+                        showResult('Please select a future date and time.', false);
+                        return;
+                    }
+                } else if (delayType !== 'none') {
+                    const delayValue = parseInt(document.getElementById('delayValue').value);
+                    
+                    if (isNaN(delayValue) || delayValue < 1) {
+                        showResult('Please enter a valid delay value.', false);
+                        return;
+                    }
+                    
+                    switch (delayType) {
+                        case 'seconds':
+                            delayMs = delayValue * 1000;
+                            break;
+                        case 'minutes':
+                            delayMs = delayValue * 60 * 1000;
+                            break;
+                        case 'hours':
+                            delayMs = delayValue * 60 * 60 * 1000;
+                            break;
+                    }
+                }
+                
+                // Show loading state
+                sendButton.disabled = true;
+                sendButton.innerHTML = '<span class="loading"></span> Scheduling...';
+                
+                try {
+                    const response = await fetch('/api/schedule-sms', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            phoneNumber,
+                            message,
+                            contactId,
+                            workspaceId,
+                            delay: delayMs,
+                            metadata: {
+                                source: 'test-ui',
+                                timestamp: new Date().toISOString()
+                            }
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        const scheduledTime = new Date(Date.now() + delayMs).toLocaleString();
+                        showResult(`
+                            <strong>Success!</strong><br>
+                            SMS scheduled successfully.<br>
+                            Job ID: ${data.jobId}<br>
+                            ${delayMs > 0 ? `Will be sent at approximately: ${scheduledTime}` : 'Sent immediately'}
+                        `, true);
+                    } else {
+                        showResult(`Error: ${data.message || 'Unknown error'}`, false);
+                    }
+                } catch (error) {
+                    showResult(`Error: ${error.message}`, false);
+                } finally {
+                    // Reset button state
+                    sendButton.disabled = false;
+                    sendButton.textContent = 'Schedule SMS';
+                }
+            });
+            
+            // Helper function to show result message
+            function showResult(message, isSuccess) {
+                resultDiv.innerHTML = message;
+                resultDiv.style.display = 'block';
+                
+                if (isSuccess) {
+                    resultDiv.classList.add('success');
+                    resultDiv.classList.remove('error');
+                } else {
+                    resultDiv.classList.add('error');
+                    resultDiv.classList.remove('success');
+                }
+            }
+            
+            // Helper function to format date for datetime-local input
+            function formatDateForInput(date) {
+                return date.toISOString().slice(0, 16);
+            }
+        });
+    </script>
+</body>
+</html>
