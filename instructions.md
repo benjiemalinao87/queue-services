@@ -627,12 +627,83 @@ You'll need to ensure that:
 The Queue Services system uses the following environment variables:
 
 ```
-REDIS_HOST=redis.customerconnects.app
+REDIS_HOST=localhost
 REDIS_PORT=6379
-REDIS_PASSWORD=your_redis_password
 BULL_BOARD_USERNAME=admin
 BULL_BOARD_PASSWORD=admin123
+SMS_API_URL=https://cc.automate8.com
+EMAIL_API_URL=https://cc.automate8.com
+PORT=3000
+HOST=0.0.0.0
 ```
+
+## API Testing
+
+You can test the API endpoints directly using curl:
+
+### Testing SMS Scheduling
+
+```bash
+# Send an immediate SMS
+curl -X POST https://queue-services-production.up.railway.app/api/schedule-sms \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phoneNumber": "+1234567890",
+    "message": "This is a test SMS",
+    "contactId": "123456",
+    "workspaceId": "66338",
+    "delay": 0
+  }'
+
+# Schedule an SMS for 1 minute later
+curl -X POST https://queue-services-production.up.railway.app/api/schedule-sms \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phoneNumber": "+1234567890",
+    "message": "This is a scheduled test SMS",
+    "contactId": "123456",
+    "workspaceId": "66338",
+    "delay": 60000
+  }'
+```
+
+### Testing Email Scheduling
+
+```bash
+# Send an immediate email
+curl -X POST https://queue-services-production.up.railway.app/api/schedule-email \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "test@example.com",
+    "subject": "Test Email",
+    "html": "<p>This is a test email</p>",
+    "contactId": "123456",
+    "workspaceId": "66338",
+    "delay": 0
+  }'
+
+# Schedule an email for 1 minute later
+curl -X POST https://queue-services-production.up.railway.app/api/schedule-email \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "test@example.com",
+    "subject": "Scheduled Test Email",
+    "html": "<p>This is a scheduled test email</p>",
+    "contactId": "123456",
+    "workspaceId": "66338",
+    "delay": 60000
+  }'
+```
+
+### Accessing the Bull Board UI
+
+You can access the Bull Board UI to monitor queues and jobs at:
+
+```
+https://queue-services-production.up.railway.app/admin/queues
+```
+
+Use the credentials specified in the environment variables (default: admin/admin123).
 
 ## Conclusion
 
