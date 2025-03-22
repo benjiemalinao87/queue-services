@@ -95,6 +95,39 @@ export const emailWorker = new Worker(
       // Log the error
       console.error(`Error sending Email to ${to}:`, error);
       
+      // Check if this is a rate limit error
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const isRateLimitError = errorMessage.includes('rate limit') || 
+                              errorMessage.includes('too many requests') || 
+                              errorMessage.includes('429');
+      
+      // Group jobs by workspace to update metrics for each workspace
+      const workspaceGroups: Record<string, number> = {};
+      
+      const jobs = [job];
+      jobs.forEach(job => {
+        const { workspaceId } = job.data;
+        if (!workspaceGroups[workspaceId]) {
+          workspaceGroups[workspaceId] = 0;
+        }
+        workspaceGroups[workspaceId]++;
+      });
+      
+      // Update metrics for each workspace
+      Object.entries(workspaceGroups).forEach(([workspaceId, count]) => {
+        const workspaceMetrics = startBatchProcessing('email');
+        workspaceMetrics(
+          count, 
+          false, 
+          isRateLimitError, 
+          workspaceId,
+          errorMessage
+        );
+        console.log(`Updated failure metrics for workspace ${workspaceId}: ${count} emails failed${isRateLimitError ? ' (rate limited)' : ''}`);
+      });
+      
+      console.log(`Batch processing failure metrics updated for all workspaces`);
+      
       // Throw the error to trigger job failure and retry
       throw error;
     }
@@ -271,17 +304,65 @@ export const emailBatchWorker = new Worker(
             // Update progress to complete for all jobs
             await Promise.all(workspaceJobs.map(job => job.updateProgress(100)));
             
+            // Record successful batch completion with workspace information
+            // Group jobs by workspace to update metrics for each workspace
+            const workspaceGroups: Record<string, number> = {};
+            
+            jobs.forEach(job => {
+              const { workspaceId } = job.data;
+              if (!workspaceGroups[workspaceId]) {
+                workspaceGroups[workspaceId] = 0;
+              }
+              workspaceGroups[workspaceId]++;
+            });
+            
+            // Update metrics for each workspace
+            Object.entries(workspaceGroups).forEach(([workspaceId, count]) => {
+              const workspaceMetrics = startBatchProcessing('email');
+              workspaceMetrics(count, true, false, workspaceId);
+              console.log(`Updated metrics for workspace ${workspaceId}: ${count} emails processed successfully`);
+            });
+            
             return responses;
           } catch (error) {
             console.error(`Error processing batch for workspace ${workspaceId}:`, error);
+            
+            // Check if this is a rate limit error
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            const isRateLimitError = errorMessage.includes('rate limit') || 
+                                    errorMessage.includes('too many requests') || 
+                                    errorMessage.includes('429');
+            
+            // Group jobs by workspace to update metrics for each workspace
+            const workspaceGroups: Record<string, number> = {};
+            
+            jobs.forEach(job => {
+              const { workspaceId } = job.data;
+              if (!workspaceGroups[workspaceId]) {
+                workspaceGroups[workspaceId] = 0;
+              }
+              workspaceGroups[workspaceId]++;
+            });
+            
+            // Update metrics for each workspace
+            Object.entries(workspaceGroups).forEach(([workspaceId, count]) => {
+              const workspaceMetrics = startBatchProcessing('email');
+              workspaceMetrics(
+                count, 
+                false, 
+                isRateLimitError, 
+                workspaceId,
+                errorMessage
+              );
+              console.log(`Updated failure metrics for workspace ${workspaceId}: ${count} emails failed${isRateLimitError ? ' (rate limited)' : ''}`);
+            });
+            
+            console.log(`Batch processing failure metrics updated for all workspaces`);
+            
             throw error;
           }
         })
       );
-      
-      // Record successful batch completion
-      const metrics = completeBatchMetrics(jobs.length, true);
-      console.log(`Batch processing metrics:`, metrics);
       
       // Flatten results
       return results.flat();
@@ -290,7 +371,40 @@ export const emailBatchWorker = new Worker(
       
       // Record failed batch
       const metrics = completeBatchMetrics(jobs.length, false, error instanceof Error && error.message.includes('rate limit'));
+      
       console.log(`Batch processing failure metrics:`, metrics);
+      
+      // Check if this is a rate limit error
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const isRateLimitError = errorMessage.includes('rate limit') || 
+                              errorMessage.includes('too many requests') || 
+                              errorMessage.includes('429');
+      
+      // Group jobs by workspace to update metrics for each workspace
+      const workspaceGroups: Record<string, number> = {};
+      
+      jobs.forEach(job => {
+        const { workspaceId } = job.data;
+        if (!workspaceGroups[workspaceId]) {
+          workspaceGroups[workspaceId] = 0;
+        }
+        workspaceGroups[workspaceId]++;
+      });
+      
+      // Update metrics for each workspace
+      Object.entries(workspaceGroups).forEach(([workspaceId, count]) => {
+        const workspaceMetrics = startBatchProcessing('email');
+        workspaceMetrics(
+          count, 
+          false, 
+          isRateLimitError, 
+          workspaceId,
+          errorMessage
+        );
+        console.log(`Updated failure metrics for workspace ${workspaceId}: ${count} emails failed${isRateLimitError ? ' (rate limited)' : ''}`);
+      });
+      
+      console.log(`Batch processing failure metrics updated for all workspaces`);
       
       throw error;
     }

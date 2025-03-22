@@ -11,6 +11,8 @@ import { sendSMSQueue, scheduledSMSQueue } from "./queues/sms-queue";
 import { env } from "./env";
 import metricsRoutes from "./routes/metrics";
 import { startBatchProcessing } from '@/utils/metrics';
+import { sendSMSWorker, scheduledSMSWorker, smsBatchWorker } from './worker/sms-worker';
+import { emailWorker, scheduledEmailWorker, emailBatchWorker } from './worker/email-worker';
 
 // Get current file path and directory for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -307,7 +309,32 @@ const start = async () => {
     await fastify.listen({ port: Number(env.PORT) || 3000, host: env.HOST || "0.0.0.0" });
     console.log(`Server is running on port ${env.PORT || 3000}`);
     console.log(`Bull Board UI is available at /admin/queues`);
-    addSampleMetricsData();
+    
+    // Only add sample metrics data if in development mode or if explicitly enabled
+    if (env.NODE_ENV === 'development' || env.USE_SAMPLE_METRICS === 'true') {
+      console.log('Adding sample metrics data for testing');
+      addSampleMetricsData();
+    } else {
+      console.log('Running in production mode - using real metrics');
+    }
+    
+    // Initialize workers
+    console.log('Starting queue workers...');
+    
+    // Log worker events for better monitoring with proper type annotations
+    sendSMSWorker.on('completed', (job: any) => console.log(`SMS job ${job.id} completed`));
+    sendSMSWorker.on('failed', (job: any, err: Error) => console.error(`SMS job ${job?.id} failed: ${err}`));
+    
+    scheduledSMSWorker.on('completed', (job: any) => console.log(`Scheduled SMS job ${job.id} completed`));
+    scheduledSMSWorker.on('failed', (job: any, err: Error) => console.error(`Scheduled SMS job ${job?.id} failed: ${err}`));
+    
+    emailWorker.on('completed', (job: any) => console.log(`Email job ${job.id} completed`));
+    emailWorker.on('failed', (job: any, err: Error) => console.error(`Email job ${job?.id} failed: ${err}`));
+    
+    scheduledEmailWorker.on('completed', (job: any) => console.log(`Scheduled Email job ${job.id} completed`));
+    scheduledEmailWorker.on('failed', (job: any, err: Error) => console.error(`Scheduled Email job ${job?.id} failed: ${err}`));
+    
+    console.log('Queue workers started successfully');
   } catch (error) {
     fastify.log.error(error);
     process.exit(1);

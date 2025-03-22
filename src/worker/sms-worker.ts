@@ -280,9 +280,24 @@ export const smsBatchWorker = new Worker(
         })
       );
       
-      // Record successful batch completion
-      const metrics = completeBatchMetrics(jobs.length, true);
-      console.log(`Batch processing metrics:`, metrics);
+      // Record successful batch completion with workspace information
+      // Group jobs by workspace to update metrics for each workspace
+      const workspaceGroups: Record<string, number> = {};
+      
+      jobs.forEach(job => {
+        const { workspaceId } = job.data;
+        if (!workspaceGroups[workspaceId]) {
+          workspaceGroups[workspaceId] = 0;
+        }
+        workspaceGroups[workspaceId]++;
+      });
+      
+      // Update metrics for each workspace
+      Object.entries(workspaceGroups).forEach(([workspaceId, count]) => {
+        const workspaceMetrics = startBatchProcessing('sms');
+        workspaceMetrics(count, true, false, workspaceId);
+        console.log(`Updated metrics for workspace ${workspaceId}: ${count} messages processed successfully`);
+      });
       
       // Flatten results
       return results.flat();
@@ -315,6 +330,32 @@ export const smsBatchWorker = new Worker(
       );
       
       console.log(`Batch processing failure metrics:`, metrics);
+      
+      // Group jobs by workspace to update metrics for each workspace
+      const workspaceGroups: Record<string, number> = {};
+      
+      jobs.forEach(job => {
+        const { workspaceId } = job.data;
+        if (!workspaceGroups[workspaceId]) {
+          workspaceGroups[workspaceId] = 0;
+        }
+        workspaceGroups[workspaceId]++;
+      });
+      
+      // Update metrics for each workspace
+      Object.entries(workspaceGroups).forEach(([workspaceId, count]) => {
+        const workspaceMetrics = startBatchProcessing('sms');
+        workspaceMetrics(
+          count, 
+          false, 
+          isRateLimitError, 
+          workspaceId,
+          errorMessage
+        );
+        console.log(`Updated failure metrics for workspace ${workspaceId}: ${count} messages failed${isRateLimitError ? ' (rate limited)' : ''}`);
+      });
+      
+      console.log(`Batch processing failure metrics updated for all workspaces`);
       
       throw error;
     }

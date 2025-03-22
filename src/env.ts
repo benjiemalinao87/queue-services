@@ -26,6 +26,9 @@ export const env = createEnv({
     // Server
     PORT: z.coerce.number().default(3000),
     HOST: z.string().default("0.0.0.0"),
+    
+    // Metrics
+    USE_SAMPLE_METRICS: z.enum(["true", "false"]).default("false"),
   },
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
@@ -49,6 +52,9 @@ export const env = createEnv({
     // Server
     PORT: process.env.PORT,
     HOST: process.env.HOST,
+    
+    // Metrics
+    USE_SAMPLE_METRICS: process.env.USE_SAMPLE_METRICS || "false",
   },
   skipValidation: !!process.env.CI || !!process.env.SKIP_ENV_VALIDATION,
   emptyStringAsUndefined: true,

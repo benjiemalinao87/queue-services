@@ -13,6 +13,8 @@
 - [x] Add health check endpoint
 - [x] Implement Email queue system (immediate and scheduled delivery)
 - [x] Create test UI for SMS and Email scheduling
+- [x] Update dashboard to display actual numeric workspace IDs
+- [x] Implement client-side transformation for workspace IDs
 
 ## In Progress
 
@@ -29,6 +31,8 @@
 - [ ] Add more detailed logging for job processing
 - [ ] Create a dashboard for monitoring queue performance
 - [ ] Implement rate limiting for SMS sending
+- [ ] Store workspace ID mappings in a configuration file for easier updates
+- [ ] Add search functionality by actual workspace ID in the dashboard
 
 ### Medium-term
 
@@ -37,6 +41,8 @@
 - [ ] Add support for bulk SMS sending
 - [ ] Implement job dependencies (jobs that depend on other jobs)
 - [ ] Add analytics for message delivery and open rates
+- [ ] Fetch actual workspace names from database to display alongside IDs
+- [ ] Implement persistent storage for metrics data
 
 ### Long-term
 
@@ -44,6 +50,7 @@
 - [ ] Add support for multiple Redis instances for high availability
 - [ ] Implement job archiving for long-term storage
 - [ ] Add support for additional messaging channels (WhatsApp, Messenger, etc.)
+- [ ] Develop a comprehensive workspace management system with detailed metrics
 
 ## Production Readiness Roadmap
 
@@ -99,4 +106,3 @@ To ensure the Queue Services system is fully production-ready, the following ite
 - [ ] Implement automated failover mechanisms
 - [ ] Create regular backup verification processes
 - [ ] Establish recovery time objectives (RTOs)
-- [ ] Conduct regular disaster recovery drills

@@ -241,23 +241,31 @@ The dashboard was displaying generic workspace identifiers (e.g., "workspace-1")
 
 ### Solution
 - Updated test data generation to use the same numeric workspace IDs that are used in the production queue jobs
-- Modified both the standalone test script and the sample data function in the main application to maintain consistency
-- Ensured that workspace IDs flow through the system without transformation
+- Modified the dashboard to display actual workspace IDs instead of generic names
+- Implemented a client-side transformation approach to map generic IDs to actual IDs without requiring server changes
 
 ### Lessons Learned
-1. **Consistency in Identifiers**: Test data should mirror production data structures as closely as possible, especially for identifiers used across different parts of the system.
 
-2. **Data Flow Traceability**: When data flows through multiple systems (like from queue jobs to metrics to dashboard), maintaining consistent identifiers is crucial for debugging and monitoring.
+1. **Identifier Consistency Matters**: Using consistent identifiers across all parts of the system (test data, production data, UI displays) is crucial for effective monitoring and debugging.
 
-3. **Real-world Testing**: Using actual production-like identifiers in test data helps catch issues that might not appear with simplified test data.
+2. **Client-Side Transformations**: When dealing with deployed applications, client-side transformations can provide immediate solutions without requiring server deployments:
+   - We implemented a mapping function in the dashboard JavaScript to transform generic IDs to actual IDs
+   - This approach allowed us to fix the issue without modifying server-side data structures
 
-4. **Cross-system Correlation**: When multiple dashboards or interfaces display the same data (Bull dashboard and our custom dashboard), they should use consistent identifiers to allow for easy correlation.
+3. **Separation of Display vs. API Values**: It's essential to distinguish between:
+   - Values used for display purposes (transformed IDs for human readability)
+   - Values used for API calls (original IDs for system compatibility)
+   
+4. **Graceful Fallbacks**: Our transformation function included a fallback to the original ID if no mapping was found, ensuring the system remains robust even with unexpected data.
 
-### Best Practices
-- Always use production-like identifiers in test data
-- Document the expected format of identifiers in each part of the system
-- Implement validation to ensure identifiers maintain their expected format throughout the data flow
-- When displaying identifiers in UI, consider adding additional context (like names) alongside the raw IDs
+5. **Documentation Importance**: Documenting the mapping between generic and actual IDs is essential for maintenance and future development.
+
+6. **Testing Considerations**: When generating test data, it's critical to match the structure and format of production data as closely as possible to avoid discrepancies in monitoring tools.
+
+7. **Deployment Strategy**: For long-term solutions:
+   - Consider storing mappings in configuration files for easier updates
+   - Explore fetching actual workspace names from a database to provide more context
+   - Implement server-side transformations for a more comprehensive solution
 
 ## Email Queue Implementation
 
