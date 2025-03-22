@@ -336,8 +336,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add SMS workspaces
     if (data.sms && data.sms.workspaceRateLimits) {
       data.sms.workspaceRateLimits.forEach(workspace => {
+        // Transform the workspace ID
+        const actualWorkspaceId = transformWorkspaceId(workspace.workspaceId);
+        
         workspaces.set(workspace.workspaceId, {
-          workspaceId: workspace.workspaceId,
+          workspaceId: actualWorkspaceId, // Use the transformed ID for display
+          originalId: workspace.workspaceId, // Keep the original for API calls
           smsCount: workspace.count,
           emailCount: 0,
           lastExceeded: workspace.lastExceeded
@@ -348,6 +352,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add or update with Email workspaces
     if (data.email && data.email.workspaceRateLimits) {
       data.email.workspaceRateLimits.forEach(workspace => {
+        // Transform the workspace ID
+        const actualWorkspaceId = transformWorkspaceId(workspace.workspaceId);
+        
         if (workspaces.has(workspace.workspaceId)) {
           const existing = workspaces.get(workspace.workspaceId);
           existing.emailCount = workspace.count;
@@ -356,7 +363,8 @@ document.addEventListener('DOMContentLoaded', function() {
           }
         } else {
           workspaces.set(workspace.workspaceId, {
-            workspaceId: workspace.workspaceId,
+            workspaceId: actualWorkspaceId, // Use the transformed ID for display
+            originalId: workspace.workspaceId, // Keep the original for API calls
             smsCount: 0,
             emailCount: workspace.count,
             lastExceeded: workspace.lastExceeded
@@ -389,10 +397,10 @@ document.addEventListener('DOMContentLoaded', function() {
           <td>${workspace.emailCount}</td>
           <td>${lastExceeded}</td>
           <td>
-            <button class="btn btn-sm btn-info view-details-btn" data-workspace-id="${workspace.workspaceId}">
+            <button class="btn btn-sm btn-info view-details-btn" data-workspace-id="${workspace.originalId}">
               View Details
             </button>
-            <button class="btn btn-sm btn-warning reset-workspace-btn" data-workspace-id="${workspace.workspaceId}">
+            <button class="btn btn-sm btn-warning reset-workspace-btn" data-workspace-id="${workspace.originalId}">
               Reset Metrics
             </button>
           </td>
@@ -424,8 +432,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add SMS workspaces
     if (data.sms && data.sms.workspaceMetrics) {
       data.sms.workspaceMetrics.forEach(workspace => {
+        // Transform the workspace ID
+        const actualWorkspaceId = transformWorkspaceId(workspace.workspaceId);
+        
         workspaces.set(workspace.workspaceId, {
-          workspaceId: workspace.workspaceId,
+          workspaceId: actualWorkspaceId, // Use the transformed ID for display
+          originalId: workspace.workspaceId, // Keep the original for API calls
           totalSMS: workspace.totalProcessed,
           successSMS: workspace.successCount,
           failureSMS: workspace.failureCount,
@@ -442,25 +454,31 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add or update with Email workspaces
     if (data.email && data.email.workspaceMetrics) {
       data.email.workspaceMetrics.forEach(workspace => {
+        // Transform the workspace ID
+        const actualWorkspaceId = transformWorkspaceId(workspace.workspaceId);
+        
         if (workspaces.has(workspace.workspaceId)) {
           const existing = workspaces.get(workspace.workspaceId);
           existing.totalEmail = workspace.totalProcessed;
           existing.successEmail = workspace.successCount;
-          existing.failureEmail = workspace.failureEmail;
+          existing.failureEmail = workspace.failureCount;
           existing.avgProcessingTimeEmail = workspace.avgProcessingTime;
+          
+          // Update last processed time if email was processed more recently
           if (new Date(workspace.lastProcessedTime) > new Date(existing.lastProcessedTime)) {
             existing.lastProcessedTime = workspace.lastProcessedTime;
           }
         } else {
           workspaces.set(workspace.workspaceId, {
-            workspaceId: workspace.workspaceId,
+            workspaceId: actualWorkspaceId, // Use the transformed ID for display
+            originalId: workspace.workspaceId, // Keep the original for API calls
             totalSMS: 0,
             successSMS: 0,
             failureSMS: 0,
             avgProcessingTimeSMS: 0,
             totalEmail: workspace.totalProcessed,
             successEmail: workspace.successCount,
-            failureEmail: workspace.failureEmail,
+            failureEmail: workspace.failureCount,
             avgProcessingTimeEmail: workspace.avgProcessingTime,
             lastProcessedTime: workspace.lastProcessedTime
           });
@@ -509,10 +527,10 @@ document.addEventListener('DOMContentLoaded', function() {
           <td>${avgProcessingTime.toFixed(1)} ms</td>
           <td>${lastProcessed}</td>
           <td>
-            <button class="btn btn-sm btn-info view-details-btn" data-workspace-id="${workspace.workspaceId}">
+            <button class="btn btn-sm btn-info view-details-btn" data-workspace-id="${workspace.originalId}">
               View Details
             </button>
-            <button class="btn btn-sm btn-warning reset-workspace-btn" data-workspace-id="${workspace.workspaceId}">
+            <button class="btn btn-sm btn-warning reset-workspace-btn" data-workspace-id="${workspace.originalId}">
               Reset Metrics
             </button>
           </td>
@@ -565,8 +583,11 @@ document.addEventListener('DOMContentLoaded', function() {
   function viewWorkspaceDetails(workspaceId) {
     currentWorkspaceId = workspaceId;
     
+    // Transform the workspace ID for display
+    const displayWorkspaceId = transformWorkspaceId(workspaceId);
+    
     // Show loading state in modal
-    document.getElementById('workspaceDetailModalLabel').textContent = `Workspace: ${workspaceId} (Loading...)`;
+    document.getElementById('workspaceDetailModalLabel').textContent = `Workspace: ${displayWorkspaceId} (Loading...)`;
     document.getElementById('smsDetailCount').textContent = '-';
     document.getElementById('smsDetailLastExceeded').textContent = '-';
     document.getElementById('emailDetailCount').textContent = '-';
@@ -588,7 +609,7 @@ document.addEventListener('DOMContentLoaded', function() {
       })
       .catch(error => {
         console.error('Error fetching workspace details:', error);
-        document.getElementById('workspaceDetailModalLabel').textContent = `Workspace: ${workspaceId} (Error loading data)`;
+        document.getElementById('workspaceDetailModalLabel').textContent = `Workspace: ${displayWorkspaceId} (Error loading data)`;
       });
   }
 
@@ -597,7 +618,7 @@ document.addEventListener('DOMContentLoaded', function() {
    */
   function updateWorkspaceDetailModal(data) {
     // Update modal title
-    document.getElementById('workspaceDetailModalLabel').textContent = `Workspace: ${data.workspaceId}`;
+    document.getElementById('workspaceDetailModalLabel').textContent = `Workspace: ${transformWorkspaceId(data.workspaceId)}`;
     
     // Update SMS details
     if (data.sms) {
@@ -888,6 +909,24 @@ document.addEventListener('DOMContentLoaded', function() {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
   
+  /**
+   * Transform workspace ID from generic name to actual numeric ID
+   * This function maps generic workspace names to actual numeric IDs for better consistency with Bull dashboard
+   */
+  function transformWorkspaceId(workspaceId) {
+    // Map of generic workspace names to actual numeric IDs
+    const workspaceMap = {
+      'workspace-1': '66338',
+      'workspace-2': '66339',
+      'workspace-3': '66340',
+      'workspace-4': '66341',
+      'workspace-5': '66342'
+    };
+    
+    // If the workspaceId is in our map, return the mapped value, otherwise return the original
+    return workspaceMap[workspaceId] || workspaceId;
+  }
+
   /**
    * Add event listeners to workspace buttons
    */

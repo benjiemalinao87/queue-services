@@ -140,7 +140,7 @@ export const connection: ConnectionOptions = isLocalDev
 ## SMS Queue Integration
 
 ### Redis Connection Strategies
-When connecting to Redis from different environments, it's important to understand the various connection strategies:
+When connecting to Redis from different environments, it's essential to understand the various connection strategies:
 
 1. **Internal Network Connection**: Within Railway's network, services can connect to each other using internal hostnames like `redis.railway.internal`. This is secure and efficient but only works within Railway's network.
 
@@ -178,7 +178,7 @@ Effective queue design patterns for SMS processing:
 
 ### API Endpoint Configuration
 
-When integrating with external APIs, it's important to understand the correct endpoint structure:
+When integrating with external APIs, it's crucial to understand the correct endpoint structure:
 
 1. **Base URL**: The base URL should be configured as an environment variable (e.g., `SMS_API_URL: "https://cc.automate8.com"`).
 
@@ -233,6 +233,31 @@ When connecting to Redis from a local environment to a remote instance:
    - **Public URL**: May be accessible but could have security implications (e.g., `redis-production-c503.up.railway.app`).
 
 3. **Deployment Strategy**: For reliable operation, it's best to deploy both the worker and the queue service in the same environment (e.g., both on Railway) to ensure stable Redis connectivity.
+
+## Consistent Identifier Usage Between Test and Production
+
+### Issue
+The dashboard was displaying generic workspace identifiers (e.g., "workspace-1") while the Bull dashboard showed actual numeric IDs (e.g., "66338"). This inconsistency made it difficult to correlate data between different monitoring interfaces.
+
+### Solution
+- Updated test data generation to use the same numeric workspace IDs that are used in the production queue jobs
+- Modified both the standalone test script and the sample data function in the main application to maintain consistency
+- Ensured that workspace IDs flow through the system without transformation
+
+### Lessons Learned
+1. **Consistency in Identifiers**: Test data should mirror production data structures as closely as possible, especially for identifiers used across different parts of the system.
+
+2. **Data Flow Traceability**: When data flows through multiple systems (like from queue jobs to metrics to dashboard), maintaining consistent identifiers is crucial for debugging and monitoring.
+
+3. **Real-world Testing**: Using actual production-like identifiers in test data helps catch issues that might not appear with simplified test data.
+
+4. **Cross-system Correlation**: When multiple dashboards or interfaces display the same data (Bull dashboard and our custom dashboard), they should use consistent identifiers to allow for easy correlation.
+
+### Best Practices
+- Always use production-like identifiers in test data
+- Document the expected format of identifiers in each part of the system
+- Implement validation to ensure identifiers maintain their expected format throughout the data flow
+- When displaying identifiers in UI, consider adding additional context (like names) alongside the raw IDs
 
 ## Email Queue Implementation
 
@@ -405,3 +430,76 @@ curl -X POST https://queue-services-production.up.railway.app/api/schedule-email
   4. Set up automated scanning tools to detect credential leaks
 
 - **Lesson**: Treat any exposed credential as compromised and rotate it immediately. The Git history preserves all previous commits, so even if you remove credentials in a new commit, they remain accessible in the repository history.
+
+## Dashboard UI and Error Handling
+
+### Preventing "Cannot set properties of null" Errors
+
+- **Problem**: The dashboard was experiencing errors like "Cannot set properties of null (setting 'textContent')" when trying to update DOM elements that didn't exist or when handling incomplete data.
+
+- **Solution**: Implemented defensive programming techniques with comprehensive null checks throughout the JavaScript code:
+
+```javascript
+// Before: Prone to errors if element doesn't exist
+document.getElementById('someElement').textContent = data.value;
+
+// After: Safe handling with null checks
+const element = document.getElementById('someElement');
+if (element) {
+  element.textContent = data.value ? data.value : 'N/A';
+}
+```
+
+- **Key Takeaways**:
+  1. Always check if DOM elements exist before manipulating them
+  2. Validate data structure before accessing nested properties
+  3. Provide fallback values for potentially undefined data
+  4. Use defensive programming to handle edge cases gracefully
+
+### UI Duplication Issues
+
+- **Problem**: The dashboard had duplicate workspace tables causing confusion and potential errors in the JavaScript code that updates these tables.
+
+- **Solution**: Removed the duplicate table from the HTML and ensured all JavaScript references were updated to work with the single table:
+
+```javascript
+// Added null checks and data validation
+function updateWorkspaceTable(data) {
+  const tableBody = document.getElementById('workspaceTableBody');
+  if (!tableBody) {
+    console.error('Element with ID "workspaceTableBody" not found in the DOM');
+    return;
+  }
+  
+  // Proceed with updating the table safely
+  // ...
+}
+```
+
+- **Key Takeaways**:
+  1. Maintain a clean DOM structure without duplicate IDs or redundant elements
+  2. Log errors when expected elements are not found to aid debugging
+  3. Structure JavaScript to gracefully handle missing elements
+  4. Test UI components with both complete and incomplete data sets
+
+### Data Validation Best Practices
+
+- **Problem**: The dashboard code assumed that all data properties would always exist, causing errors when processing incomplete metrics data.
+
+- **Solution**: Added comprehensive data validation throughout the code to safely handle missing or incomplete data:
+
+```typescript
+// Before: Assumes data.sms and data.email always exist
+const smsCount = data.sms.totalProcessed;
+const emailCount = data.email.totalProcessed;
+
+// After: Safely handles missing data
+const smsCount = data.sms && data.sms.totalProcessed ? data.sms.totalProcessed : 0;
+const emailCount = data.email && data.email.totalProcessed ? data.email.totalProcessed : 0;
+```
+
+- **Key Takeaways**:
+  1. Never assume API responses will have a complete data structure
+  2. Provide default values for all potentially missing data
+  3. Use optional chaining and nullish coalescing when available
+  4. Structure code to be resilient to API changes

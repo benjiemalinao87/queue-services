@@ -20,8 +20,8 @@ const __dirname = path.dirname(__filename);
  * Add sample metrics data for testing the dashboard
  */
 function addSampleMetricsData() {
-  // Sample workspace IDs
-  const workspaceIds = ['workspace-1', 'workspace-2', 'workspace-3', 'workspace-4', 'workspace-5'];
+  // Use actual numeric IDs that match what's shown in the Bull dashboard
+  const workspaceIds = ['66338', '66339', '66340', '66341', '66342'];
   
   // Add sample successful message processing
   workspaceIds.forEach((workspaceId, index) => {

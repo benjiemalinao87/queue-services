@@ -247,6 +247,23 @@
 - Integrate with Supabase to display actual workspace names instead of just IDs
 - Implement persistent storage for metrics data to survive application restarts
 
+## 2025-03-22: Dashboard Improvements - Displaying Actual Workspace IDs
+
+### Changes Made
+- Updated test metrics scripts to use actual numeric workspace IDs that match those shown in the Bull dashboard
+- Modified both `test-metrics.ts` and the sample metrics function in `index.ts` to use consistent workspace IDs
+- Ensured that the dashboard displays the real workspace IDs from the queue jobs instead of generic names
+
+### Benefits
+- Improved consistency between the dashboard and the Bull queue admin interface
+- Better traceability of messages and rate limits by workspace
+- More accurate representation of the actual data flowing through the system
+
+### Next Steps
+- Continue monitoring the dashboard to ensure it correctly displays all metrics
+- Consider adding more detailed workspace information to the dashboard (e.g., workspace names alongside IDs)
+- Implement additional filtering options by workspace ID in the dashboard UI
+
 ## 2025-03-22: Dashboard Bug Fixes and Stability Improvements
 
 ### Completed Tasks
