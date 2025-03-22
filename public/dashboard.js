@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Fetch metrics data
     const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
-    fetch(`${apiUrl}/api/metrics`)
+    fetch(`${apiUrl}/metrics`)
       .then(response => {
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
@@ -444,7 +444,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Fetch workspace details
     const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
-    fetch(`${apiUrl}/api/metrics/workspace/${workspaceId}`)
+    fetch(`${apiUrl}/metrics/workspace/${workspaceId}`)
       .then(response => response.json())
       .then(data => {
         currentWorkspaceData = data;
@@ -596,7 +596,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Send reset request
     const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
-    fetch(`${apiUrl}/api/metrics/reset`, {
+    fetch(`${apiUrl}/metrics/reset`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -637,7 +637,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Send reset request
     const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
-    fetch(`${apiUrl}/api/metrics/reset`, {
+    fetch(`${apiUrl}/metrics/reset`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
