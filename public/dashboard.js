@@ -201,8 +201,14 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Fetch metrics data
-    fetch('/api/metrics')
-      .then(response => response.json())
+    const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
+    fetch(`${apiUrl}/api/metrics`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+      })
       .then(data => {
         updateDashboard(data);
         
@@ -218,6 +224,13 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.card-text').forEach(el => {
           el.classList.remove('refreshing');
         });
+        
+        // Display error message
+        document.getElementById('errorAlert').textContent = `Failed to fetch metrics: ${error.message}`;
+        document.getElementById('errorAlert').classList.remove('d-none');
+        setTimeout(() => {
+          document.getElementById('errorAlert').classList.add('d-none');
+        }, 5000);
       });
   }
 
@@ -430,7 +443,8 @@ document.addEventListener('DOMContentLoaded', function() {
     modal.show();
     
     // Fetch workspace details
-    fetch(`/api/metrics/workspace/${workspaceId}`)
+    const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
+    fetch(`${apiUrl}/api/metrics/workspace/${workspaceId}`)
       .then(response => response.json())
       .then(data => {
         currentWorkspaceData = data;
@@ -581,7 +595,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Send reset request
-    fetch('/api/metrics/reset', {
+    const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
+    fetch(`${apiUrl}/api/metrics/reset`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -621,7 +636,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Send reset request
-    fetch('/api/metrics/reset', {
+    const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
+    fetch(`${apiUrl}/api/metrics/reset`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

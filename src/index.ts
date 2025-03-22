@@ -74,7 +74,21 @@ fastify.register(fastifyStatic, {
 
 // Add route for dashboard
 fastify.get("/dashboard", async (request, reply) => {
-  return reply.sendFile("dashboard.html");
+  // Try to serve from public directory first, then from dist/public as fallback
+  try {
+    return reply.sendFile("dashboard.html");
+  } catch (error) {
+    // If file not found in public dir, try dist/public
+    fastify.log.info("Attempting to serve dashboard from dist/public directory");
+    return reply.sendFile("dashboard.html", path.join(process.cwd(), "dist", "public"));
+  }
+});
+
+// Register another static file server for dist/public
+fastify.register(fastifyStatic, {
+  root: path.join(process.cwd(), "dist", "public"),
+  prefix: "/dist-public/",
+  decorateReply: false // Don't decorate reply again
 });
 
 // Add routes for test pages
