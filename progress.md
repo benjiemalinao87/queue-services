@@ -198,3 +198,44 @@
 - Implement comprehensive monitoring for both email and SMS delivery.
 - Add more detailed logging for API requests and responses.
 - Consider implementing a webhook system for delivery status notifications.
+
+## 2025-03-22: Workspace Rate Limit Monitoring and Dashboard
+
+### Completed Tasks
+
+- **Workspace-Specific Rate Limit Tracking**:
+  - Enhanced the metrics utility to track rate limit exceedances by workspace ID
+  - Added detailed tracking of rate limit events including timestamps, batch sizes, and error messages
+  - Implemented workspace-specific metrics storage with proper type safety
+  - Fixed TypeScript errors related to undefined objects and type assignments
+
+- **Metrics API Enhancements**:
+  - Added new endpoint to retrieve rate limit metrics for specific workspaces
+  - Enhanced the reset endpoint to allow resetting metrics for individual workspaces
+  - Improved error handling and type safety in API routes
+
+- **Monitoring Dashboard**:
+  - Created a comprehensive monitoring dashboard for workspace rate limits
+  - Implemented real-time metrics visualization with charts
+  - Added workspace search and filtering capabilities
+  - Designed with Mac OS style UI principles for clean, intuitive interface
+  - Included dark mode support and customizable settings
+
+- **Documentation Updates**:
+  - Updated batch processing guide with workspace rate limit tracking information
+  - Enhanced integration guide with examples of how to monitor and respond to workspace rate limits
+  - Added code examples for integrating with the metrics API
+
+### Lessons Learned
+
+- Multi-tenant systems require careful tracking of resource usage by tenant
+- Visualizing metrics helps identify problematic patterns more quickly than raw data
+- TypeScript's strict null checking helps prevent runtime errors by catching potential issues at compile time
+- Implementing a dashboard within the same service can be efficient when the dashboard is primarily displaying data already available to the service
+
+### Next Steps
+
+- Implement automated alerts when workspaces repeatedly exceed rate limits
+- Consider adding tiered rate limits based on customer subscription levels
+- Enhance the dashboard with historical data visualization over longer time periods
+- Add export functionality for metrics data to support further analysis

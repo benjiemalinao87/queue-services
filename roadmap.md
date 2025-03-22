@@ -80,6 +80,9 @@ To ensure the Queue Services system is fully production-ready, the following ite
 - [ ] Implement detailed metrics collection
 - [ ] Create operational dashboards for system health
 - [ ] Set up automated testing of the queue system
+- [ ] Implement automated alerts when workspaces repeatedly exceed rate limits
+- [ ] Enhance the dashboard with historical data visualization over longer time periods
+- [ ] Add export functionality for metrics data to support further analysis
 
 ### Performance Optimization
 
@@ -88,6 +91,7 @@ To ensure the Queue Services system is fully production-ready, the following ite
 - [ ] Optimize job concurrency settings
 - [ ] Implement rate limiting for external APIs
 - [ ] Add performance benchmarking tools
+- [ ] Consider adding tiered rate limits based on customer subscription levels
 
 ### Disaster Recovery
 

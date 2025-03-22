@@ -1,10 +1,15 @@
 import { Queue } from "bullmq";
-import { connection, defaultJobOptions } from "./configs";
+import { connection, defaultJobOptions } from "@/config/queue.config";
 import { smsSchema } from "./schemas";
 
 export const sendSMSQueue = new Queue("send-sms-queue", {
   connection,
   defaultJobOptions,
+  // Add rate limiter settings to the queue itself
+  limiter: {
+    max: 50,        // Maximum number of jobs processed per time window
+    duration: 1000, // Time window in milliseconds (1 second)
+  }
 });
 
 export const scheduledSMSQueue = new Queue("scheduled-sms-queue", {
@@ -17,6 +22,11 @@ export const scheduledSMSQueue = new Queue("scheduled-sms-queue", {
       count: 1000, // keep the latest 1000 completed jobs
     },
   },
+  // Add rate limiter settings to the scheduled queue
+  limiter: {
+    max: 50,        // Maximum number of jobs processed per time window
+    duration: 1000, // Time window in milliseconds (1 second)
+  }
 });
 
 // Validate SMS data before adding to queue

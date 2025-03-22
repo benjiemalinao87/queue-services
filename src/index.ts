@@ -9,6 +9,7 @@ import { sendEmailQueue, scheduledEmailQueue } from "./queues/email-queue";
 import { myQueue } from "./queues/my-queue";
 import { sendSMSQueue, scheduledSMSQueue } from "./queues/sms-queue";
 import { env } from "./env";
+import metricsRoutes from "./routes/metrics";
 
 // Get current file path and directory for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -71,6 +72,12 @@ fastify.register(fastifyStatic, {
   prefix: "/",
 });
 
+// Add route for dashboard
+fastify.get("/dashboard", async (request, reply) => {
+  return reply.sendFile("dashboard.html");
+});
+
+// Add routes for test pages
 // Remove the custom route handlers since we're serving static files directly
 // The files will be accessible at:
 // - /test-sms.html
@@ -215,6 +222,9 @@ fastify.post<{
     });
   }
 });
+
+// Register metrics routes
+fastify.register(metricsRoutes, { prefix: '/metrics' });
 
 // Add a health check endpoint
 fastify.get("/health", async () => {

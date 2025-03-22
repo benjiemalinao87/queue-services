@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Queue Services Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Sidebar -->
+      <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
+        <div class="position-sticky pt-3">
+          <ul class="nav flex-column">
+            <li class="nav-item">
+              <h5 class="sidebar-heading px-3 mt-4 mb-1 text-muted">
+                <span>Queue Services</span>
+              </h5>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link active" href="#overview">
+                Overview
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#workspaces">
+                Workspaces
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#settings">
+                Settings
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/admin/queues" target="_blank">
+                Bull Board
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <!-- Main content -->
+      <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+          <h1 class="h2">Workspace Monitoring Dashboard</h1>
+          <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshBtn">Refresh</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="resetAllBtn">Reset All Metrics</button>
+            </div>
+            <div class="dropdown">
+              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="timeRangeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                Last 24 hours
+              </button>
+              <ul class="dropdown-menu" aria-labelledby="timeRangeDropdown">
+                <li><a class="dropdown-item" href="#" data-range="24h">Last 24 hours</a></li>
+                <li><a class="dropdown-item" href="#" data-range="7d">Last 7 days</a></li>
+                <li><a class="dropdown-item" href="#" data-range="30d">Last 30 days</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Overview Section -->
+        <section id="overview" class="mb-5">
+          <h2>System Overview</h2>
+          <div class="row">
+            <div class="col-md-6 col-lg-3 mb-4">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title">SMS Rate Limit Exceedances</h5>
+                  <h2 class="card-text" id="smsRateLimitCount">-</h2>
+                  <p class="card-text text-muted">Total across all workspaces</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6 col-lg-3 mb-4">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title">Email Rate Limit Exceedances</h5>
+                  <h2 class="card-text" id="emailRateLimitCount">-</h2>
+                  <p class="card-text text-muted">Total across all workspaces</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6 col-lg-3 mb-4">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title">Affected Workspaces</h5>
+                  <h2 class="card-text" id="affectedWorkspacesCount">-</h2>
+                  <p class="card-text text-muted">Workspaces with rate limits</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6 col-lg-3 mb-4">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title">Last Exceedance</h5>
+                  <h2 class="card-text" id="lastExceedanceTime">-</h2>
+                  <p class="card-text text-muted" id="lastExceedanceWorkspace">-</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-4">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title">Rate Limit Exceedances Over Time</h5>
+                  <canvas id="exceedancesChart"></canvas>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6 mb-4">
+              <div class="card">
+                <div class="card-body">
+                  <h5 class="card-title">Exceedances by Type</h5>
+                  <canvas id="exceedancesByTypeChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Workspaces Section -->
+        <section id="workspaces" class="mb-5">
+          <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h2>Top Workspaces</h2>
+            <div class="input-group" style="max-width: 300px;">
+              <input type="text" class="form-control" placeholder="Search workspace ID" id="workspaceSearch">
+              <button class="btn btn-outline-secondary" type="button" id="workspaceSearchBtn">Search</button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-striped table-sm">
+              <thead>
+                <tr>
+                  <th scope="col">Workspace ID</th>
+                  <th scope="col">SMS Exceedances</th>
+                  <th scope="col">Email Exceedances</th>
+                  <th scope="col">Last Exceeded</th>
+                  <th scope="col">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="workspacesTableBody">
+                <!-- Workspace data will be populated here -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Workspace Detail Modal -->
+        <div class="modal fade" id="workspaceDetailModal" tabindex="-1" aria-labelledby="workspaceDetailModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="workspaceDetailModalLabel">Workspace Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <ul class="nav nav-tabs" id="workspaceDetailTabs" role="tablist">
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="sms-tab" data-bs-toggle="tab" data-bs-target="#sms-tab-pane" type="button" role="tab" aria-controls="sms-tab-pane" aria-selected="true">SMS</button>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="email-tab" data-bs-toggle="tab" data-bs-target="#email-tab-pane" type="button" role="tab" aria-controls="email-tab-pane" aria-selected="false">Email</button>
+                  </li>
+                </ul>
+                <div class="tab-content" id="workspaceDetailTabContent">
+                  <div class="tab-pane fade show active" id="sms-tab-pane" role="tabpanel" aria-labelledby="sms-tab" tabindex="0">
+                    <div class="mt-3">
+                      <h6>SMS Rate Limit Exceedances</h6>
+                      <p>Count: <span id="smsDetailCount">-</span></p>
+                      <p>Last Exceeded: <span id="smsDetailLastExceeded">-</span></p>
+                      
+                      <h6 class="mt-4">Exceedance History</h6>
+                      <div class="table-responsive">
+                        <table class="table table-sm">
+                          <thead>
+                            <tr>
+                              <th>Timestamp</th>
+                              <th>Batch Size</th>
+                              <th>Error Message</th>
+                            </tr>
+                          </thead>
+                          <tbody id="smsDetailTableBody">
+                            <!-- SMS detail data will be populated here -->
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="tab-pane fade" id="email-tab-pane" role="tabpanel" aria-labelledby="email-tab" tabindex="0">
+                    <div class="mt-3">
+                      <h6>Email Rate Limit Exceedances</h6>
+                      <p>Count: <span id="emailDetailCount">-</span></p>
+                      <p>Last Exceeded: <span id="emailDetailLastExceeded">-</span></p>
+                      
+                      <h6 class="mt-4">Exceedance History</h6>
+                      <div class="table-responsive">
+                        <table class="table table-sm">
+                          <thead>
+                            <tr>
+                              <th>Timestamp</th>
+                              <th>Batch Size</th>
+                              <th>Error Message</th>
+                            </tr>
+                          </thead>
+                          <tbody id="emailDetailTableBody">
+                            <!-- Email detail data will be populated here -->
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-warning" id="resetSmsBtn">Reset SMS Metrics</button>
+                <button type="button" class="btn btn-warning" id="resetEmailBtn">Reset Email Metrics</button>
+                <button type="button" class="btn btn-danger" id="resetAllWorkspaceBtn">Reset All Metrics</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Section -->
+        <section id="settings" class="mb-5">
+          <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h2>Settings</h2>
+          </div>
+          
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Dashboard Settings</h5>
+              
+              <form id="settingsForm">
+                <div class="mb-3">
+                  <label for="refreshInterval" class="form-label">Auto-refresh Interval (seconds)</label>
+                  <input type="number" class="form-control" id="refreshInterval" min="5" value="60">
+                </div>
+                
+                <div class="mb-3">
+                  <label for="maxWorkspaces" class="form-label">Maximum Workspaces to Display</label>
+                  <input type="number" class="form-control" id="maxWorkspaces" min="5" max="100" value="10">
+                </div>
+                
+                <div class="mb-3 form-check">
+                  <input type="checkbox" class="form-check-input" id="darkMode">
+                  <label class="form-check-label" for="darkMode">Dark Mode</label>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Save Settings</button>
+              </form>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>

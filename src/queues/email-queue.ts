@@ -1,11 +1,15 @@
 import { Queue } from "bullmq";
-import { connection, defaultJobOptions } from "./configs";
+import { connection, defaultJobOptions } from "@/config/queue.config";
 import { emailSchema } from "./schemas/email-schema";
 import type { EmailData } from "./schemas/email-schema";
 
 export const sendEmailQueue = new Queue("send-email-queue", {
   connection,
   defaultJobOptions,
+  limiter: {
+    max: 100,       // Maximum number of jobs processed per time window
+    duration: 1000, // Time window in milliseconds (1 second)
+  }
 });
 
 export const scheduledEmailQueue = new Queue("scheduled-email-queue", {
@@ -18,6 +22,10 @@ export const scheduledEmailQueue = new Queue("scheduled-email-queue", {
       count: 1000, // keep the latest 1000 completed jobs
     },
   },
+  limiter: {
+    max: 100,       // Maximum number of jobs processed per time window
+    duration: 1000, // Time window in milliseconds (1 second)
+  }
 });
 
 // Validate email data before adding to queue

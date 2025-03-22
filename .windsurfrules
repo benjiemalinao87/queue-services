@@ -1,0 +1,87 @@
+This is a texting app using twilio, its also like CRM for home improvement, coaches, and small business
+Server hosted: Railway.app
+Server: Nodejs Express
+Database is supabase cloude. 
+
+our outgoing sms and email is using queue-services.
+
+always use use ES modules.
+
+My end goal of this development is for me to be able to build a fully built simple crm with texting and calling functionality. To be able to use not only twilio as a backend but all other sms provider
+
+Features in roadmap are project management, note taking, 3d maps for installer,invoicing, emdedable standalone livechat where 3rd party apps/crm can white label and iframe/embed inside their app.
+
+database is not installed in docker so any fixing and troubleshooting you need to connect via cli and used credentials below
+
+
+
+Instructions
+1. Always use codebase_search with target_directories="{{INSERT YOUR DIRECTORY}}" first to find existing core files
+2. Always check existing system files purposes before creating new ones with similar functionality
+3. Always list the cursor rules youre using this is for debugging purpose
+4. always use inviroment variable
+5. every user request, you need to repeat it to test your understanding then use your own explaination to help you better understand the user requests.
+
+Base Backend_url: cc.automate8.com
+
+# Optional
+
+- If multiple steps or sub-requests are given, address them in the specified order.
+Provide answers in the exact format or sequence requested.
+- Pay close attention to all stated constraints (e.g., language choice, performance goals, coding style). Do not ignore any requirement or best practice stated.
+- Only produce output relevant to the question or instructions. Do not add features, code, or details beyond what is explicitly asked.
+- Deliver the response in a minimal yet complete form. Avoid unnecessary verbosity and tangential remarks.
+
+
+- stay consistent with the design of like Mac OS design philosophy. 
+
+- do not create file if already existed.
+- as much as possible for better integration with all part of the app, seperate each part of the UI in seperate file.
+
+
+# Error Fixing
+- Consider multiple possible causes before deciding. Do not jump to conclusions
+- Explain the problem in plain English
+- Make minimal necessary changes, changing as few lines of code as possible
+- Always verify the fix
+- In case of strange errors, ask the user to perform a web search to find the latest up-to-date information
+- when the issue is fix, please remove the logging to avoide over head of cpu and memory
+
+# Building Process
+
+  2. Core Functionalities: A breakdown of what the app should do
+  3. Docs and Libraries: Documentation or tools that will be referenced
+  4. Current File Structure: A snapshot of existing files to provide clarity
+5. once finish building the feature, if it is succesully, update the file progress.md, if not exist, please create it.
+6. when building a ui, always do the backend/database design first, document the process and prepare for ui implementation the implementation doc.
+
+Write each step in the process as simple and precise prompts.
+Test each functionality after implementation.
+
+# Automatically update documentation files after each significant change:
+- progress.md: Track completed features and improvements
+- lessons_learn.md: Document technical insights and solutions
+- roadmap.md: Update progress and adjust future plans
+- instructions.md: Maintain project overview and requirements
+
+# Troubleshooting guide
+1. Always look for UI then backend to make sure the UI operation is inligned with backend database or server
+2. If you failed 2 times in fixing the bug, you need to put more logging, and use that log to formulate the solution. 
+3. Monitor any logging to efffectively fix the issue.
+4. connect directly to supabase using credential below for reviewing schema of tables for troubleshooting.
+5. You need to send me one at a time instruction like sql command I need to enter in supabase if needed, but most of the time you need to fix database related directly to supabase sdk in cli.
+6. before starting your bug fixing, you need to first repear the issue to make sure your understanding of the current issue. 
+7. when the issue is fix, please remove the logging to avoide over head of cpu and memory
+
+
+Supabase Database Credentials
+
+Project:  https://ycwttshvizkotcwwyjpt.supabase.co
+
+Anon Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inljd3R0c2h2aXprb3Rjd3d5anB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgyNDQ5NzUsImV4cCI6MjA1MzgyMDk3NX0.7Mn5vXXre0KwW0lKgsPv1lwSXn5CiRjTRMw2RuH_55g
+
+
+service_rolesecret : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inljd3R0c2h2aXprb3Rjd3d5anB0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczODI0NDk3NSwiZXhwIjoyMDUzODIwOTc1fQ.blOq_yJX-J-N7znR-4220THNruoI7j_bLONliOtukmQ
+
+
+

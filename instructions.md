@@ -637,6 +637,71 @@ PORT=3000
 HOST=0.0.0.0
 ```
 
+## Connection Architecture
+
+One of the key benefits of this architecture is the clear separation of concerns between your applications and the queue service:
+
+### Connection Flow
+
+1. **Frontend (cc1.automate8.com)**:
+   - Makes HTTP requests to your backend API or directly to queue-services API
+   - Does not need any direct Redis connection
+   - Only needs to know the API endpoints for scheduling messages
+
+2. **Backend (cc.automate8.com)**:
+   - Receives requests from the frontend
+   - Makes API calls to queue-services to schedule messages
+   - Receives callback requests from queue-services when it's time to send a message
+   - Does not need any direct Redis connection
+
+3. **Queue Services (queue-services-production.up.railway.app)**:
+   - Connects to Redis to manage the message queues
+   - Exposes API endpoints for scheduling messages
+   - Processes queued jobs and calls back to your backend API
+   - Handles all Redis interactions internally
+
+This separation of concerns provides several benefits:
+
+1. **Security**: Your main applications don't need Redis credentials
+2. **Simplicity**: Your applications only need to make HTTP requests, not manage queue connections
+3. **Scalability**: The queue service can be scaled independently
+4. **Reliability**: If Redis has issues, only the queue service is directly affected
+
+So in summary, only the queue-services application needs to connect to Redis. Your backend and frontend applications interact with queue-services through HTTP APIs, which is much simpler and more secure.
+
+## Scheduling Capabilities
+
+The Queue Services system can handle jobs scheduled far into the future. There's no practical upper limit on how far in advance you can schedule a job.
+
+### Long-term Scheduling
+
+- **Maximum Delay**: You can schedule jobs months or even years in advance
+- **60-Day Example**: Scheduling an email 60 days in the future is perfectly valid:
+  ```javascript
+  // Calculate delay in milliseconds
+  const sixtyDaysInMs = 60 * 24 * 60 * 60 * 1000; // 5,184,000,000 ms
+
+  // API request
+  const response = await axios.post('https://queue-services-production.up.railway.app/api/schedule-email', {
+    to: "recipient@example.com",
+    subject: "Your 60-day reminder",
+    html: "<p>This email was scheduled 60 days ago!</p>",
+    contactId: "contact-123",
+    workspaceId: "workspace-456",
+    delay: sixtyDaysInMs
+  });
+  ```
+
+### Technical Details
+
+- **Time Representation**: Delays are specified in milliseconds
+- **Storage Mechanism**: BullMQ stores delayed jobs in Redis using sorted sets with the scheduled timestamp as the score
+- **Persistence**: As long as Redis persists its data (through RDB snapshots or AOF logs), the scheduled jobs will survive server restarts
+- **Considerations**:
+  - Monitor Redis memory usage if scheduling thousands of long-term jobs
+  - Ensure server clock synchronization for very long-term scheduling
+  - JavaScript can safely represent integers up to 2^53 - 1, so even delays of several years are within limits
+
 ## API Testing
 
 You can test the API endpoints directly using curl:
