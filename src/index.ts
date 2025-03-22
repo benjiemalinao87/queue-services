@@ -10,11 +10,43 @@ import { myQueue } from "./queues/my-queue";
 import { sendSMSQueue, scheduledSMSQueue } from "./queues/sms-queue";
 import { env } from "./env";
 import metricsRoutes from "./routes/metrics";
+import { startBatchProcessing } from '@/utils/metrics';
 
 // Get current file path and directory for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Add sample metrics data for testing the dashboard
+function addSampleMetricsData() {
+  // Sample workspace IDs
+  const workspaceIds = ['workspace-1', 'workspace-2', 'workspace-3'];
+  
+  console.log('Adding sample metrics data for testing the dashboard...');
+  
+  // Add sample SMS rate limit exceedances
+  workspaceIds.forEach((workspaceId, index) => {
+    const completeBatch = startBatchProcessing('sms');
+    const batchSize = 10 + index * 5;
+    const success = false;
+    const rateExceeded = true;
+    const errorMessage = `Rate limit exceeded for workspace ${workspaceId}`;
+    completeBatch(batchSize, success, rateExceeded, workspaceId, errorMessage);
+  });
+  
+  // Add sample Email rate limit exceedances
+  workspaceIds.forEach((workspaceId, index) => {
+    const completeBatch = startBatchProcessing('email');
+    const batchSize = 15 + index * 10;
+    const success = false;
+    const rateExceeded = true;
+    const errorMessage = `Rate limit exceeded for workspace ${workspaceId}`;
+    completeBatch(batchSize, success, rateExceeded, workspaceId, errorMessage);
+  });
+  
+  console.log('Sample metrics data added successfully!');
+}
+
+// Create Fastify instance
 const fastify = Fastify({ logger: true });
 
 const serverAdapter = new FastifyAdapter();
@@ -250,6 +282,7 @@ const start = async () => {
     await fastify.listen({ port: Number(env.PORT) || 3000, host: env.HOST || "0.0.0.0" });
     console.log(`Server is running on port ${env.PORT || 3000}`);
     console.log(`Bull Board UI is available at /admin/queues`);
+    addSampleMetricsData();
   } catch (error) {
     fastify.log.error(error);
     process.exit(1);
