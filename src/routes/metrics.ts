@@ -14,6 +14,12 @@ const metricsRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
    */
   fastify.get('/', async (request, reply) => {
     const metrics = getMetricsReport();
+    
+    // Add cache control headers to prevent caching
+    reply.header('Cache-Control', 'no-cache, no-store, must-revalidate');
+    reply.header('Pragma', 'no-cache');
+    reply.header('Expires', '0');
+    
     return metrics;
   });
 

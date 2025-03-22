@@ -322,17 +322,106 @@ const start = async () => {
     console.log('Starting queue workers...');
     
     // Log worker events for better monitoring with proper type annotations
-    sendSMSWorker.on('completed', (job: any) => console.log(`SMS job ${job.id} completed`));
-    sendSMSWorker.on('failed', (job: any, err: Error) => console.error(`SMS job ${job?.id} failed: ${err}`));
+    sendSMSWorker.on('completed', (job: any) => {
+      console.log(`SMS job ${job.id} completed`);
+      // Update metrics for individual job
+      const metrics = startBatchProcessing('sms');
+      metrics(1, true, false, job.data.workspaceId);
+      console.log(`Updated metrics for SMS job ${job.id} - workspace ${job.data.workspaceId}`);
+    });
     
-    scheduledSMSWorker.on('completed', (job: any) => console.log(`Scheduled SMS job ${job.id} completed`));
-    scheduledSMSWorker.on('failed', (job: any, err: Error) => console.error(`Scheduled SMS job ${job?.id} failed: ${err}`));
+    sendSMSWorker.on('failed', (job: any, err: Error) => {
+      console.error(`SMS job ${job?.id} failed: ${err}`);
+      // Update metrics for failed job
+      if (job?.data?.workspaceId) {
+        const metrics = startBatchProcessing('sms');
+        const isRateLimitError = err.message.includes('rate limit') || 
+                                err.message.includes('too many requests') || 
+                                err.message.includes('429');
+        metrics(1, false, isRateLimitError, job.data.workspaceId, err.message);
+        console.log(`Updated failure metrics for SMS job ${job.id} - workspace ${job.data.workspaceId}`);
+      }
+    });
     
-    emailWorker.on('completed', (job: any) => console.log(`Email job ${job.id} completed`));
-    emailWorker.on('failed', (job: any, err: Error) => console.error(`Email job ${job?.id} failed: ${err}`));
+    scheduledSMSWorker.on('completed', (job: any) => {
+      console.log(`Scheduled SMS job ${job.id} completed`);
+      // Update metrics for individual job
+      const metrics = startBatchProcessing('sms');
+      metrics(1, true, false, job.data.workspaceId);
+      console.log(`Updated metrics for scheduled SMS job ${job.id} - workspace ${job.data.workspaceId}`);
+    });
     
-    scheduledEmailWorker.on('completed', (job: any) => console.log(`Scheduled Email job ${job.id} completed`));
-    scheduledEmailWorker.on('failed', (job: any, err: Error) => console.error(`Scheduled Email job ${job?.id} failed: ${err}`));
+    scheduledSMSWorker.on('failed', (job: any, err: Error) => {
+      console.error(`Scheduled SMS job ${job?.id} failed: ${err}`);
+      // Update metrics for failed job
+      if (job?.data?.workspaceId) {
+        const metrics = startBatchProcessing('sms');
+        const isRateLimitError = err.message.includes('rate limit') || 
+                                err.message.includes('too many requests') || 
+                                err.message.includes('429');
+        metrics(1, false, isRateLimitError, job.data.workspaceId, err.message);
+        console.log(`Updated failure metrics for scheduled SMS job ${job.id} - workspace ${job.data.workspaceId}`);
+      }
+    });
+    
+    emailWorker.on('completed', (job: any) => {
+      console.log(`Email job ${job.id} completed`);
+      // Update metrics for individual job
+      const metrics = startBatchProcessing('email');
+      metrics(1, true, false, job.data.workspaceId);
+      console.log(`Updated metrics for email job ${job.id} - workspace ${job.data.workspaceId}`);
+    });
+    
+    emailWorker.on('failed', (job: any, err: Error) => {
+      console.error(`Email job ${job?.id} failed: ${err}`);
+      // Update metrics for failed job
+      if (job?.data?.workspaceId) {
+        const metrics = startBatchProcessing('email');
+        const isRateLimitError = err.message.includes('rate limit') || 
+                                err.message.includes('too many requests') || 
+                                err.message.includes('429');
+        metrics(1, false, isRateLimitError, job.data.workspaceId, err.message);
+        console.log(`Updated failure metrics for email job ${job.id} - workspace ${job.data.workspaceId}`);
+      }
+    });
+    
+    scheduledEmailWorker.on('completed', (job: any) => {
+      console.log(`Scheduled Email job ${job.id} completed`);
+      // Update metrics for individual job
+      const metrics = startBatchProcessing('email');
+      metrics(1, true, false, job.data.workspaceId);
+      console.log(`Updated metrics for scheduled email job ${job.id} - workspace ${job.data.workspaceId}`);
+    });
+    
+    scheduledEmailWorker.on('failed', (job: any, err: Error) => {
+      console.error(`Scheduled Email job ${job?.id} failed: ${err}`);
+      // Update metrics for failed job
+      if (job?.data?.workspaceId) {
+        const metrics = startBatchProcessing('email');
+        const isRateLimitError = err.message.includes('rate limit') || 
+                                err.message.includes('too many requests') || 
+                                err.message.includes('429');
+        metrics(1, false, isRateLimitError, job.data.workspaceId, err.message);
+        console.log(`Updated failure metrics for scheduled email job ${job.id} - workspace ${job.data.workspaceId}`);
+      }
+    });
+    
+    // Also add listeners for batch workers
+    smsBatchWorker.on('completed', (job: any) => {
+      console.log(`SMS batch job ${job.id} completed`);
+    });
+    
+    smsBatchWorker.on('failed', (job: any, err: Error) => {
+      console.error(`SMS batch job ${job?.id} failed: ${err}`);
+    });
+    
+    emailBatchWorker.on('completed', (job: any) => {
+      console.log(`Email batch job ${job.id} completed`);
+    });
+    
+    emailBatchWorker.on('failed', (job: any, err: Error) => {
+      console.error(`Email batch job ${job?.id} failed: ${err}`);
+    });
     
     console.log('Queue workers started successfully');
   } catch (error) {

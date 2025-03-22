@@ -200,9 +200,18 @@ document.addEventListener('DOMContentLoaded', function() {
       el.classList.add('refreshing');
     });
     
-    // Fetch metrics data
+    // Add timestamp to prevent caching
+    const timestamp = new Date().getTime();
+    
+    // Fetch metrics data with cache busting
     const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
-    fetch(`${apiUrl}/metrics`)
+    fetch(`${apiUrl}/metrics?_=${timestamp}`, {
+      method: 'GET',
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    })
       .then(response => {
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
@@ -888,8 +897,13 @@ document.addEventListener('DOMContentLoaded', function() {
       clearInterval(refreshTimer);
     }
     
-    // Start new timer
-    refreshTimer = setInterval(fetchDashboardData, config.refreshInterval * 1000);
+    // Fetch data immediately
+    fetchDashboardData();
+    
+    // Start new timer with shorter interval for more responsive updates
+    const interval = Math.min(config.refreshInterval, 10) * 1000; // Use at most 10 seconds
+    console.log(`Setting up auto-refresh every ${interval/1000} seconds`);
+    refreshTimer = setInterval(fetchDashboardData, interval);
   }
 
   /**
