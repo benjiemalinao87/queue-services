@@ -238,155 +238,236 @@ document.addEventListener('DOMContentLoaded', function() {
    * Update dashboard with new data
    */
   function updateDashboard(data) {
-    // Update overview metrics
-    document.getElementById('smsRateLimitCount').textContent = data.sms.rateExceededCount || 0;
-    document.getElementById('emailRateLimitCount').textContent = data.email.rateExceededCount || 0;
+    // Update global metrics
+    updateGlobalMetrics(data);
     
-    // Process workspace data
-    const workspaces = [];
+    // Update workspace table
+    updateWorkspaceTable(data);
     
-    // Process SMS workspaces
-    if (data.sms && data.sms.workspaceRateLimits) {
-      Object.entries(data.sms.workspaceRateLimits).forEach(([workspaceId, metrics]) => {
-        const existing = workspaces.find(w => w.workspaceId === workspaceId);
-        if (existing) {
-          existing.smsCount = metrics.count || 0;
-          existing.smsLastExceeded = metrics.lastExceeded;
-          if (metrics.lastExceeded && (!existing.lastExceeded || new Date(metrics.lastExceeded) > new Date(existing.lastExceeded))) {
-            existing.lastExceeded = metrics.lastExceeded;
-          }
-        } else {
-          workspaces.push({
-            workspaceId,
-            smsCount: metrics.count || 0,
-            emailCount: 0,
-            smsLastExceeded: metrics.lastExceeded,
-            emailLastExceeded: null,
-            lastExceeded: metrics.lastExceeded
-          });
-        }
-      });
-    }
-    
-    // Process Email workspaces
-    if (data.email && data.email.workspaceRateLimits) {
-      Object.entries(data.email.workspaceRateLimits).forEach(([workspaceId, metrics]) => {
-        const existing = workspaces.find(w => w.workspaceId === workspaceId);
-        if (existing) {
-          existing.emailCount = metrics.count || 0;
-          existing.emailLastExceeded = metrics.lastExceeded;
-          if (metrics.lastExceeded && (!existing.lastExceeded || new Date(metrics.lastExceeded) > new Date(existing.lastExceeded))) {
-            existing.lastExceeded = metrics.lastExceeded;
-          }
-        } else {
-          workspaces.push({
-            workspaceId,
-            smsCount: 0,
-            emailCount: metrics.count || 0,
-            smsLastExceeded: null,
-            emailLastExceeded: metrics.lastExceeded,
-            lastExceeded: metrics.lastExceeded
-          });
-        }
-      });
-    }
-    
-    // Sort workspaces by total count
-    workspaces.sort((a, b) => {
-      const totalA = a.smsCount + a.emailCount;
-      const totalB = b.smsCount + b.emailCount;
-      return totalB - totalA;
-    });
-    
-    // Update affected workspaces count
-    document.getElementById('affectedWorkspacesCount').textContent = workspaces.length;
-    
-    // Update last exceedance info
-    if (workspaces.length > 0) {
-      const mostRecent = [...workspaces].sort((a, b) => {
-        if (!a.lastExceeded) return 1;
-        if (!b.lastExceeded) return -1;
-        return new Date(b.lastExceeded) - new Date(a.lastExceeded);
-      })[0];
-      
-      if (mostRecent.lastExceeded) {
-        document.getElementById('lastExceedanceTime').textContent = formatDate(mostRecent.lastExceeded);
-        document.getElementById('lastExceedanceWorkspace').textContent = `Workspace: ${mostRecent.workspaceId}`;
-      } else {
-        document.getElementById('lastExceedanceTime').textContent = 'N/A';
-        document.getElementById('lastExceedanceWorkspace').textContent = 'No recent exceedances';
-      }
-    } else {
-      document.getElementById('lastExceedanceTime').textContent = 'N/A';
-      document.getElementById('lastExceedanceWorkspace').textContent = 'No exceedances recorded';
-    }
-    
-    // Update workspaces table
-    updateWorkspacesTable(workspaces.slice(0, config.maxWorkspaces));
+    // Update workspace stats table
+    updateWorkspaceStatsTable(data);
     
     // Update charts
     updateCharts(data);
   }
 
   /**
-   * Update the workspaces table
+   * Update the global metrics section
    */
-  function updateWorkspacesTable(workspaces) {
-    const tableBody = document.getElementById('workspacesTableBody');
+  function updateGlobalMetrics(data) {
+    // Update SMS metrics
+    document.getElementById('sms-total').textContent = data.sms.totalProcessed;
+    document.getElementById('sms-success').textContent = data.sms.successCount;
+    document.getElementById('sms-failure').textContent = data.sms.failureCount;
+    document.getElementById('sms-rate-exceeded').textContent = data.sms.rateExceededCount;
+    
+    // Calculate SMS success rate
+    const smsSuccessRate = data.sms.totalProcessed > 0 
+      ? ((data.sms.successCount / data.sms.totalProcessed) * 100).toFixed(1) 
+      : '0.0';
+    document.getElementById('sms-success-rate').textContent = `${smsSuccessRate}%`;
+    
+    // Update Email metrics
+    document.getElementById('email-total').textContent = data.email.totalProcessed;
+    document.getElementById('email-success').textContent = data.email.successCount;
+    document.getElementById('email-failure').textContent = data.email.failureCount;
+    document.getElementById('email-rate-exceeded').textContent = data.email.rateExceededCount;
+    
+    // Calculate Email success rate
+    const emailSuccessRate = data.email.totalProcessed > 0 
+      ? ((data.email.successCount / data.email.totalProcessed) * 100).toFixed(1) 
+      : '0.0';
+    document.getElementById('email-success-rate').textContent = `${emailSuccessRate}%`;
+  }
+
+  /**
+   * Update the workspace table with rate limit data
+   */
+  function updateWorkspaceTable(data) {
+    const tableBody = document.getElementById('workspaceTableBody');
     tableBody.innerHTML = '';
     
-    if (workspaces.length === 0) {
+    // Combine SMS and Email workspace data
+    const workspaces = new Map();
+    
+    // Add SMS workspaces
+    data.sms.workspaceRateLimits.forEach(workspace => {
+      workspaces.set(workspace.workspaceId, {
+        workspaceId: workspace.workspaceId,
+        smsCount: workspace.count,
+        emailCount: 0,
+        lastExceeded: workspace.lastExceeded
+      });
+    });
+    
+    // Add or update with Email workspaces
+    data.email.workspaceRateLimits.forEach(workspace => {
+      if (workspaces.has(workspace.workspaceId)) {
+        const existing = workspaces.get(workspace.workspaceId);
+        existing.emailCount = workspace.count;
+        if (new Date(workspace.lastExceeded) > new Date(existing.lastExceeded)) {
+          existing.lastExceeded = workspace.lastExceeded;
+        }
+      } else {
+        workspaces.set(workspace.workspaceId, {
+          workspaceId: workspace.workspaceId,
+          smsCount: 0,
+          emailCount: workspace.count,
+          lastExceeded: workspace.lastExceeded
+        });
+      }
+    });
+    
+    // Convert to array and sort by total count
+    const sortedWorkspaces = Array.from(workspaces.values())
+      .sort((a, b) => (b.smsCount + b.emailCount) - (a.smsCount + a.emailCount));
+    
+    // Add rows to table
+    if (sortedWorkspaces.length === 0) {
       const row = document.createElement('tr');
-      const cell = document.createElement('td');
-      cell.colSpan = 5;
-      cell.textContent = 'No workspaces have exceeded rate limits';
-      cell.className = 'text-center';
-      row.appendChild(cell);
+      row.innerHTML = `
+        <td colspan="5" class="text-center">No rate limit exceedances recorded</td>
+      `;
       tableBody.appendChild(row);
-      return;
+    } else {
+      sortedWorkspaces.forEach(workspace => {
+        const row = document.createElement('tr');
+        const lastExceeded = workspace.lastExceeded 
+          ? new Date(workspace.lastExceeded).toLocaleString() 
+          : 'N/A';
+        
+        row.innerHTML = `
+          <td>${workspace.workspaceId}</td>
+          <td>${workspace.smsCount}</td>
+          <td>${workspace.emailCount}</td>
+          <td>${lastExceeded}</td>
+          <td>
+            <button class="btn btn-sm btn-info view-details-btn" data-workspace-id="${workspace.workspaceId}">
+              View Details
+            </button>
+            <button class="btn btn-sm btn-warning reset-workspace-btn" data-workspace-id="${workspace.workspaceId}">
+              Reset Metrics
+            </button>
+          </td>
+        `;
+        
+        tableBody.appendChild(row);
+      });
     }
     
-    workspaces.forEach(workspace => {
-      const row = document.createElement('tr');
-      
-      // Workspace ID
-      const idCell = document.createElement('td');
-      idCell.textContent = workspace.workspaceId;
-      row.appendChild(idCell);
-      
-      // SMS Exceedances
-      const smsCell = document.createElement('td');
-      smsCell.textContent = workspace.smsCount;
-      row.appendChild(smsCell);
-      
-      // Email Exceedances
-      const emailCell = document.createElement('td');
-      emailCell.textContent = workspace.emailCount;
-      row.appendChild(emailCell);
-      
-      // Last Exceeded
-      const lastCell = document.createElement('td');
-      lastCell.textContent = workspace.lastExceeded ? formatDate(workspace.lastExceeded) : 'N/A';
-      row.appendChild(lastCell);
-      
-      // Actions
-      const actionsCell = document.createElement('td');
-      const viewBtn = document.createElement('button');
-      viewBtn.className = 'btn btn-sm btn-primary me-2';
-      viewBtn.textContent = 'View Details';
-      viewBtn.addEventListener('click', () => viewWorkspaceDetails(workspace.workspaceId));
-      actionsCell.appendChild(viewBtn);
-      
-      const resetBtn = document.createElement('button');
-      resetBtn.className = 'btn btn-sm btn-warning';
-      resetBtn.textContent = 'Reset';
-      resetBtn.addEventListener('click', () => resetWorkspaceMetrics(null, workspace.workspaceId));
-      actionsCell.appendChild(resetBtn);
-      
-      row.appendChild(actionsCell);
-      
-      tableBody.appendChild(row);
+    // Add event listeners to buttons
+    addWorkspaceButtonListeners();
+  }
+
+  /**
+   * Update the workspace stats table with message metrics
+   */
+  function updateWorkspaceStatsTable(data) {
+    const tableBody = document.getElementById('workspaceStatsTableBody');
+    tableBody.innerHTML = '';
+    
+    // Combine SMS and Email workspace data
+    const workspaces = new Map();
+    
+    // Add SMS workspaces
+    data.sms.workspaceMetrics.forEach(workspace => {
+      workspaces.set(workspace.workspaceId, {
+        workspaceId: workspace.workspaceId,
+        totalSMS: workspace.totalProcessed,
+        successSMS: workspace.successCount,
+        failureSMS: workspace.failureCount,
+        avgProcessingTimeSMS: workspace.avgProcessingTime,
+        totalEmail: 0,
+        successEmail: 0,
+        failureEmail: 0,
+        avgProcessingTimeEmail: 0,
+        lastProcessedTime: workspace.lastProcessedTime
+      });
     });
+    
+    // Add or update with Email workspaces
+    data.email.workspaceMetrics.forEach(workspace => {
+      if (workspaces.has(workspace.workspaceId)) {
+        const existing = workspaces.get(workspace.workspaceId);
+        existing.totalEmail = workspace.totalProcessed;
+        existing.successEmail = workspace.successCount;
+        existing.failureEmail = workspace.failureCount;
+        existing.avgProcessingTimeEmail = workspace.avgProcessingTime;
+        if (new Date(workspace.lastProcessedTime) > new Date(existing.lastProcessedTime)) {
+          existing.lastProcessedTime = workspace.lastProcessedTime;
+        }
+      } else {
+        workspaces.set(workspace.workspaceId, {
+          workspaceId: workspace.workspaceId,
+          totalSMS: 0,
+          successSMS: 0,
+          failureSMS: 0,
+          avgProcessingTimeSMS: 0,
+          totalEmail: workspace.totalProcessed,
+          successEmail: workspace.successCount,
+          failureEmail: workspace.failureEmail,
+          avgProcessingTimeEmail: workspace.avgProcessingTime,
+          lastProcessedTime: workspace.lastProcessedTime
+        });
+      }
+    });
+    
+    // Convert to array and sort by total messages
+    const sortedWorkspaces = Array.from(workspaces.values())
+      .sort((a, b) => (b.totalSMS + b.totalEmail) - (a.totalSMS + a.totalEmail));
+    
+    // Add rows to table
+    if (sortedWorkspaces.length === 0) {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td colspan="6" class="text-center">No message metrics recorded</td>
+      `;
+      tableBody.appendChild(row);
+    } else {
+      sortedWorkspaces.forEach(workspace => {
+        const row = document.createElement('tr');
+        const lastProcessed = workspace.lastProcessedTime 
+          ? new Date(workspace.lastProcessedTime).toLocaleString() 
+          : 'N/A';
+        
+        const totalMessages = workspace.totalSMS + workspace.totalEmail;
+        const totalSuccess = workspace.successSMS + workspace.successEmail;
+        const successRate = totalMessages > 0 
+          ? ((totalSuccess / totalMessages) * 100).toFixed(1) 
+          : '0.0';
+        
+        // Calculate weighted average processing time
+        let avgProcessingTime = 0;
+        if (workspace.totalSMS > 0 || workspace.totalEmail > 0) {
+          const totalWeight = workspace.totalSMS + workspace.totalEmail;
+          avgProcessingTime = (
+            (workspace.avgProcessingTimeSMS * workspace.totalSMS) + 
+            (workspace.avgProcessingTimeEmail * workspace.totalEmail)
+          ) / totalWeight;
+        }
+        
+        row.innerHTML = `
+          <td>${workspace.workspaceId}</td>
+          <td>${totalMessages} (${workspace.totalSMS} SMS, ${workspace.totalEmail} Email)</td>
+          <td>${successRate}%</td>
+          <td>${avgProcessingTime.toFixed(1)} ms</td>
+          <td>${lastProcessed}</td>
+          <td>
+            <button class="btn btn-sm btn-info view-details-btn" data-workspace-id="${workspace.workspaceId}">
+              View Details
+            </button>
+            <button class="btn btn-sm btn-warning reset-workspace-btn" data-workspace-id="${workspace.workspaceId}">
+              Reset Metrics
+            </button>
+          </td>
+        `;
+        
+        tableBody.appendChild(row);
+      });
+    }
+    
+    // Add event listeners to buttons
+    addWorkspaceButtonListeners();
   }
 
   /**
@@ -750,5 +831,26 @@ document.addEventListener('DOMContentLoaded', function() {
    */
   function formatTime(date) {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+  
+  /**
+   * Add event listeners to workspace buttons
+   */
+  function addWorkspaceButtonListeners() {
+    // View details buttons
+    document.querySelectorAll('.view-details-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        const workspaceId = button.getAttribute('data-workspace-id');
+        viewWorkspaceDetails(workspaceId);
+      });
+    });
+    
+    // Reset metrics buttons
+    document.querySelectorAll('.reset-workspace-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        const workspaceId = button.getAttribute('data-workspace-id');
+        resetWorkspaceMetrics(null, workspaceId);
+      });
+    });
   }
 });

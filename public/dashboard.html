@@ -156,6 +156,56 @@
               </tbody>
             </table>
           </div>
+
+          <ul class="nav nav-tabs" id="metricsTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="rate-limits-tab" data-bs-toggle="tab" data-bs-target="#rate-limits" type="button" role="tab" aria-controls="rate-limits" aria-selected="true">Rate Limits</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="message-stats-tab" data-bs-toggle="tab" data-bs-target="#message-stats" type="button" role="tab" aria-controls="message-stats" aria-selected="false">Message Stats</button>
+            </li>
+          </ul>
+          
+          <div class="tab-content" id="metricsTabsContent">
+            <div class="tab-pane fade show active" id="rate-limits" role="tabpanel" aria-labelledby="rate-limits-tab">
+              <div class="table-responsive">
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Workspace ID</th>
+                      <th>SMS Exceedances</th>
+                      <th>Email Exceedances</th>
+                      <th>Last Exceeded</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="workspaceTableBody">
+                    <!-- Workspace data will be inserted here -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            <div class="tab-pane fade" id="message-stats" role="tabpanel" aria-labelledby="message-stats-tab">
+              <div class="table-responsive">
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Workspace ID</th>
+                      <th>Total Messages</th>
+                      <th>Success Rate</th>
+                      <th>Avg Processing Time</th>
+                      <th>Last Processed</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="workspaceStatsTableBody">
+                    <!-- Workspace stats data will be inserted here -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </section>
 
         <!-- Workspace Detail Modal -->

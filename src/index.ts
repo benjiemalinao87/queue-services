@@ -16,34 +16,59 @@ import { startBatchProcessing } from '@/utils/metrics';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Add sample metrics data for testing the dashboard
+/**
+ * Add sample metrics data for testing the dashboard
+ */
 function addSampleMetricsData() {
   // Sample workspace IDs
-  const workspaceIds = ['workspace-1', 'workspace-2', 'workspace-3'];
+  const workspaceIds = ['workspace-1', 'workspace-2', 'workspace-3', 'workspace-4', 'workspace-5'];
   
-  console.log('Adding sample metrics data for testing the dashboard...');
-  
-  // Add sample SMS rate limit exceedances
+  // Add sample successful message processing
   workspaceIds.forEach((workspaceId, index) => {
-    const completeBatch = startBatchProcessing('sms');
-    const batchSize = 10 + index * 5;
-    const success = false;
-    const rateExceeded = true;
-    const errorMessage = `Rate limit exceeded for workspace ${workspaceId}`;
-    completeBatch(batchSize, success, rateExceeded, workspaceId, errorMessage);
+    // Add successful SMS messages
+    const smsCompleteBatch = startBatchProcessing('sms');
+    const smsBatchSize = Math.floor(Math.random() * 20) + 5; // 5-25 messages
+    smsCompleteBatch(smsBatchSize, true, false, workspaceId, '');
+    
+    // Add successful Email messages
+    const emailCompleteBatch = startBatchProcessing('email');
+    const emailBatchSize = Math.floor(Math.random() * 15) + 3; // 3-18 messages
+    emailCompleteBatch(emailBatchSize, true, false, workspaceId, '');
+    
+    // Add some failed messages (not rate limited)
+    if (index % 3 === 0) {
+      const failedSmsCompleteBatch = startBatchProcessing('sms');
+      failedSmsCompleteBatch(2, false, false, workspaceId, 'Invalid phone number');
+      
+      const failedEmailCompleteBatch = startBatchProcessing('email');
+      failedEmailCompleteBatch(1, false, false, workspaceId, 'Invalid email address');
+    }
   });
   
-  // Add sample Email rate limit exceedances
-  workspaceIds.forEach((workspaceId, index) => {
-    const completeBatch = startBatchProcessing('email');
-    const batchSize = 15 + index * 10;
-    const success = false;
-    const rateExceeded = true;
-    const errorMessage = `Rate limit exceeded for workspace ${workspaceId}`;
-    completeBatch(batchSize, success, rateExceeded, workspaceId, errorMessage);
+  // Add sample rate limit exceedances for some workspaces
+  workspaceIds.slice(0, 3).forEach((workspaceId, index) => {
+    // Add SMS rate limit exceedances
+    const smsCompleteBatch = startBatchProcessing('sms');
+    const smsBatchSize = Math.floor(Math.random() * 10) + 5; // 5-15 messages
+    smsCompleteBatch(smsBatchSize, false, true, workspaceId, 'Rate limit exceeded for SMS');
+    
+    // Add more exceedances for the first workspace to show it's a problem account
+    if (index === 0) {
+      for (let i = 0; i < 3; i++) {
+        const additionalBatch = startBatchProcessing('sms');
+        additionalBatch(smsBatchSize, false, true, workspaceId, 'Rate limit exceeded for SMS');
+      }
+    }
+    
+    // Add Email rate limit exceedances for some workspaces
+    if (index < 2) {
+      const emailCompleteBatch = startBatchProcessing('email');
+      const emailBatchSize = Math.floor(Math.random() * 8) + 3; // 3-11 messages
+      emailCompleteBatch(emailBatchSize, false, true, workspaceId, 'Rate limit exceeded for Email');
+    }
   });
   
-  console.log('Sample metrics data added successfully!');
+  console.log('Added sample metrics data for testing the dashboard');
 }
 
 // Create Fastify instance

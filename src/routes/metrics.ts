@@ -5,7 +5,7 @@
  */
 
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
-import { getMetricsReport, resetMetrics, getWorkspaceRateLimitData } from '@/utils/metrics';
+import { getMetricsReport, resetMetrics, getWorkspaceRateLimitData, getWorkspaceMetrics } from '@/utils/metrics';
 
 const metricsRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   /**
@@ -28,13 +28,21 @@ const metricsRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
       return reply.code(400).send({ error: 'Workspace ID is required' });
     }
     
-    const smsData = getWorkspaceRateLimitData('sms', workspaceId);
-    const emailData = getWorkspaceRateLimitData('email', workspaceId);
+    const smsRateLimitData = getWorkspaceRateLimitData('sms', workspaceId);
+    const emailRateLimitData = getWorkspaceRateLimitData('email', workspaceId);
+    const smsMetrics = getWorkspaceMetrics('sms', workspaceId);
+    const emailMetrics = getWorkspaceMetrics('email', workspaceId);
     
     return {
       workspaceId,
-      sms: smsData,
-      email: emailData,
+      sms: {
+        rateLimits: smsRateLimitData,
+        metrics: smsMetrics
+      },
+      email: {
+        rateLimits: emailRateLimitData,
+        metrics: emailMetrics
+      },
       timestamp: new Date()
     };
   });

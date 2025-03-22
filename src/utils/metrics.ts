@@ -24,6 +24,14 @@ const metrics = {
         batchSize: number,
         errorMessage: string
       }>
+    }>,
+    // Track additional metrics by workspace
+    workspaceMetrics: {} as Record<string, {
+      totalProcessed: number,
+      successCount: number,
+      failureCount: number,
+      processingTimes: number[],
+      lastProcessedTime: Date
     }>
   },
   email: {
@@ -43,6 +51,14 @@ const metrics = {
         batchSize: number,
         errorMessage: string
       }>
+    }>,
+    // Track additional metrics by workspace
+    workspaceMetrics: {} as Record<string, {
+      totalProcessed: number,
+      successCount: number,
+      failureCount: number,
+      processingTimes: number[],
+      lastProcessedTime: Date
     }>
   }
 };
@@ -114,6 +130,36 @@ export function startBatchProcessing(type: 'sms' | 'email') {
       metricData.processingTimes = metricData.processingTimes.slice(-MAX_PROCESSING_TIMES);
     }
     
+    // Update workspace metrics
+    if (workspaceId) {
+      if (!metricData.workspaceMetrics[workspaceId]) {
+        metricData.workspaceMetrics[workspaceId] = {
+          totalProcessed: 0,
+          successCount: 0,
+          failureCount: 0,
+          processingTimes: [],
+          lastProcessedTime: new Date()
+        };
+      }
+      
+      const workspaceMetricData = metricData.workspaceMetrics[workspaceId];
+      workspaceMetricData.totalProcessed += batchSize;
+      workspaceMetricData.lastProcessedTime = new Date();
+      
+      if (success) {
+        workspaceMetricData.successCount += batchSize;
+      } else {
+        workspaceMetricData.failureCount += batchSize;
+      }
+      
+      workspaceMetricData.processingTimes.push(processingTime);
+      
+      // Trim processing times array if it gets too large
+      if (workspaceMetricData.processingTimes.length > MAX_PROCESSING_TIMES) {
+        workspaceMetricData.processingTimes = workspaceMetricData.processingTimes.slice(-MAX_PROCESSING_TIMES);
+      }
+    }
+    
     return {
       batchSize,
       processingTime,
@@ -149,6 +195,18 @@ export function getMetrics(type: 'sms' | 'email') {
     details: data.details
   })).sort((a, b) => b.count - a.count); // Sort by count in descending order
   
+  // Get workspace metrics
+  const workspaceMetrics = Object.entries(metricData.workspaceMetrics).map(([workspaceId, data]) => ({
+    workspaceId,
+    totalProcessed: data.totalProcessed,
+    successCount: data.successCount,
+    failureCount: data.failureCount,
+    avgProcessingTime: data.processingTimes.length > 0
+      ? data.processingTimes.reduce((sum, time) => sum + time, 0) / data.processingTimes.length
+      : 0,
+    lastProcessedTime: data.lastProcessedTime
+  }));
+  
   return {
     totalProcessed: metricData.totalProcessed,
     batchesProcessed: metricData.batchesProcessed,
@@ -159,7 +217,8 @@ export function getMetrics(type: 'sms' | 'email') {
     throughput,
     rateExceededCount: metricData.rateExceededCount,
     lastProcessedTime: metricData.lastProcessedTime,
-    workspaceRateLimits
+    workspaceRateLimits,
+    workspaceMetrics
   };
 }
 
@@ -183,6 +242,34 @@ export function getWorkspaceRateLimitData(type: 'sms' | 'email', workspaceId: st
   return {
     workspaceId,
     ...metricData.workspaceRateLimits[workspaceId]
+  };
+}
+
+/**
+ * Get metrics for a specific workspace
+ * @param type The type of message ('sms' or 'email')
+ * @param workspaceId The workspace ID to get data for
+ */
+export function getWorkspaceMetrics(type: 'sms' | 'email', workspaceId: string) {
+  const metricData = metrics[type];
+  
+  if (!metricData.workspaceMetrics[workspaceId]) {
+    return {
+      workspaceId,
+      totalProcessed: 0,
+      successCount: 0,
+      failureCount: 0,
+      avgProcessingTime: 0,
+      lastProcessedTime: null
+    };
+  }
+  
+  return {
+    workspaceId,
+    ...metricData.workspaceMetrics[workspaceId],
+    avgProcessingTime: metricData.workspaceMetrics[workspaceId].processingTimes.length > 0
+      ? metricData.workspaceMetrics[workspaceId].processingTimes.reduce((sum, time) => sum + time, 0) / metricData.workspaceMetrics[workspaceId].processingTimes.length
+      : 0
   };
 }
 
@@ -211,7 +298,8 @@ export function resetMetrics(type: 'sms' | 'email', workspaceId?: string) {
     processingTimes: [],
     rateExceededCount: 0,
     lastProcessedTime: new Date(),
-    workspaceRateLimits: {}
+    workspaceRateLimits: {},
+    workspaceMetrics: {}
   };
 }
 
@@ -230,6 +318,7 @@ export default {
   startBatchProcessing,
   getMetrics,
   getWorkspaceRateLimitData,
+  getWorkspaceMetrics,
   resetMetrics,
   getMetricsReport,
 };
