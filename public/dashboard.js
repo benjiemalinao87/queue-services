@@ -554,6 +554,40 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   /**
+   * Update workspace metric cards
+   */
+  function updateWorkspaceMetricCards(data) {
+    const totalMessages = document.getElementById('totalMessages');
+    const successRate = document.getElementById('successRate');
+    const avgProcessingTime = document.getElementById('avgProcessingTime');
+    const lastProcessed = document.getElementById('lastProcessed');
+
+    if (data && data.length > 0) {
+      // Calculate totals and averages across all workspaces
+      const totals = data.reduce((acc, workspace) => {
+        const [sms, email] = workspace.totalMessages.split(' ')[0].split('(')[1].split(',');
+        acc.messages += parseInt(sms) + parseInt(email);
+        acc.successRate += parseFloat(workspace.successRate.replace('%', ''));
+        acc.processingTime += parseFloat(workspace.avgProcessingTime.replace(' ms', ''));
+        acc.lastTimestamp = workspace.lastProcessed > acc.lastTimestamp ? workspace.lastProcessed : acc.lastTimestamp;
+        return acc;
+      }, { messages: 0, successRate: 0, processingTime: 0, lastTimestamp: 0 });
+
+      // Update the cards
+      totalMessages.textContent = totals.messages;
+      successRate.textContent = `${(totals.successRate / data.length).toFixed(1)}%`;
+      avgProcessingTime.textContent = `${(totals.processingTime / data.length).toFixed(1)} ms`;
+      lastProcessed.textContent = formatDate(totals.lastTimestamp);
+    } else {
+      // Reset cards if no data
+      totalMessages.textContent = '-';
+      successRate.textContent = '-';
+      avgProcessingTime.textContent = '-';
+      lastProcessed.textContent = '-';
+    }
+  }
+
+  /**
    * Update charts with new data
    */
   function updateCharts(data) {
