@@ -14,6 +14,8 @@ export const smsSchema = z.object({
     z.string().default("66338"),
     z.number()
   ]),
+  // Media URL for MMS messages (optional)
+  mediaUrl: z.string().optional(),
   // Additional metadata (optional)
   metadata: z.record(z.any()).optional(),
 });

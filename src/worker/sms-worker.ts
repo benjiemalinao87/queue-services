@@ -7,15 +7,17 @@ import { startBatchProcessing } from "@/utils/metrics";
 
 // Function to send SMS via the API
 async function sendSMSViaAPI(data: SMSData) {
-  const { phoneNumber, message, contactId, workspaceId, metadata } = data;
+  const { phoneNumber, message, contactId, workspaceId, metadata, mediaUrl } = data;
   
   console.log("Sending message via API:", {
     to: phoneNumber,
     message,
     contactId,
     workspaceId,
+    mediaUrl: mediaUrl ? "Present" : "Not present"
   });
   
+  // Always use the standard /send-sms endpoint for both SMS and MMS
   const response = await fetch(`${env.SMS_API_URL}/send-sms`, {
     method: "POST",
     headers: {
@@ -26,6 +28,7 @@ async function sendSMSViaAPI(data: SMSData) {
       message,
       contactId,
       workspaceId,
+      mediaUrl, // Include mediaUrl in the request if present
       ...(metadata || {}),
     }),
   });

@@ -42,6 +42,9 @@
     "test:redis-simple": "rslib build && node dist/test-redis-simple.js",
     "test:redis-node": "rslib build && node dist/test-redis-node.js",
     "test:email-queues": "rslib build && node dist/test-email-queues.js",
+    "test:immediate-sms": "rslib build && node dist/test-immediate-sms.js",
+    "test:immediate-sms-direct": "rslib build && node dist/test-immediate-sms-direct.js",
+    "test:queue-mms": "rslib build && node dist/test-queue-mms.js",
     "test-endpoints": "node --loader ts-node/esm src/scripts/test-all-endpoints.js"
   },
   "dependencies": {
