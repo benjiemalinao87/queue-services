@@ -14,21 +14,18 @@ async function sendSMSViaAPI(data: SMSData) {
     message,
     contactId,
     workspaceId,
-    mediaUrl: mediaUrl ? "Present" : "Not present"
+    mediaUrl: mediaUrl ? mediaUrl : "Not present"
   });
   
-  // Use the preview endpoint for MMS messages, which is known to work correctly
-  const endpoint = mediaUrl ? `/api/preview/send-sms` : `/send-sms`;
-  
-  const response = await fetch(`${env.SMS_API_URL}${endpoint}`, {
+  // Always use the standard /send-sms endpoint for both SMS and MMS
+  const response = await fetch(`${env.SMS_API_URL}/send-sms`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
       to: phoneNumber,
-      message: message,
-      previewText: message, // Add previewText for the preview endpoint
+      message,
       contactId,
       workspaceId,
       mediaUrl, // Include mediaUrl in the request if present
