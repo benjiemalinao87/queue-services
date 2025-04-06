@@ -99,10 +99,18 @@ fastify.register(serverAdapter.registerPlugin(), {
   basePath: "/admin/queues",
   // Add basic authentication
   beforeHandle: async (request, reply) => {
+    console.log("Auth middleware triggered for path:", request.url);
+    console.log("Environment variables loaded:", {
+      username: env.BULL_BOARD_USERNAME,
+      passwordSet: env.BULL_BOARD_PASSWORD ? "Yes (value hidden)" : "No"
+    });
+    
     const auth = request.headers.authorization;
+    console.log("Authorization header present:", !!auth);
     
     // Check if auth header exists and is in the correct format
     if (!auth || !auth.startsWith("Basic ")) {
+      console.log("No valid authorization header found, sending 401");
       reply.header("WWW-Authenticate", "Basic");
       reply.code(401).send("Authentication required");
       return;
@@ -113,15 +121,20 @@ fastify.register(serverAdapter.registerPlugin(), {
       .toString()
       .split(":");
     
+    console.log("Attempted login with username:", username);
+    
     // Check credentials against environment variables
     if (
       username !== env.BULL_BOARD_USERNAME ||
       password !== env.BULL_BOARD_PASSWORD
     ) {
+      console.log("Invalid credentials provided");
       reply.header("WWW-Authenticate", "Basic");
       reply.code(401).send("Invalid credentials");
       return;
     }
+    
+    console.log("Authentication successful");
   },
 });
 
