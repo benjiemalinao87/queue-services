@@ -76,77 +76,54 @@ function addSampleMetricsData() {
 // Create Fastify instance
 const fastify = Fastify({ logger: true });
 
-// Create a preHandler hook for authentication
-const authMiddleware = async (request, reply) => {
-  console.log("Auth middleware triggered for path:", request.url);
-  console.log("Environment variables loaded:", {
-    username: env.BULL_BOARD_USERNAME,
-    passwordSet: env.BULL_BOARD_PASSWORD ? "Yes (value hidden)" : "No"
-  });
-  
-  const auth = request.headers.authorization;
-  console.log("Authorization header present:", !!auth);
-  
-  // Check if auth header exists and is in the correct format
-  if (!auth || !auth.startsWith("Basic ")) {
-    console.log("No valid authorization header found, sending 401");
-    reply.header("WWW-Authenticate", "Basic realm=\"Queue Service Dashboard\"");
-    return reply.code(401).send("Authentication required");
-  }
-  
-  try {
+const serverAdapter = new FastifyAdapter();
+
+// Add basic auth middleware
+serverAdapter.setBasePath("/admin/queues");
+
+// Create Bull Board with all queues
+createBullBoard({
+  queues: [
+    new BullMQAdapter(myQueue), 
+    new BullMQAdapter(sendEmailQueue),
+    new BullMQAdapter(scheduledEmailQueue),
+    new BullMQAdapter(sendSMSQueue),
+    new BullMQAdapter(scheduledSMSQueue)
+  ],
+  serverAdapter,
+});
+
+// Register the Bull Board plugin
+fastify.register(serverAdapter.registerPlugin(), {
+  prefix: "/admin/queues",
+  basePath: "/admin/queues",
+  // Add basic authentication
+  beforeHandle: async (request, reply) => {
+    const auth = request.headers.authorization;
+    
+    // Check if auth header exists and is in the correct format
+    if (!auth || !auth.startsWith("Basic ")) {
+      reply.header("WWW-Authenticate", "Basic");
+      reply.code(401).send("Authentication required");
+      return;
+    }
+    
     // Decode the base64 auth string
     const [username, password] = Buffer.from(auth.split(" ")[1], "base64")
       .toString()
       .split(":");
-    
-    console.log("Attempted login with username:", username);
     
     // Check credentials against environment variables
     if (
       username !== env.BULL_BOARD_USERNAME ||
       password !== env.BULL_BOARD_PASSWORD
     ) {
-      console.log("Invalid credentials provided");
-      reply.header("WWW-Authenticate", "Basic realm=\"Queue Service Dashboard\"");
-      return reply.code(401).send("Invalid credentials");
+      reply.header("WWW-Authenticate", "Basic");
+      reply.code(401).send("Invalid credentials");
+      return;
     }
-    
-    console.log("Authentication successful");
-  } catch (error) {
-    console.error("Error in auth middleware:", error);
-    reply.header("WWW-Authenticate", "Basic realm=\"Queue Service Dashboard\"");
-    return reply.code(401).send("Authentication error");
-  }
-};
-
-// Register global preHandler for all /admin/queues routes
-fastify.register(async (instance) => {
-  // Add the preHandler hook to all routes under /admin/queues
-  instance.addHook('preHandler', authMiddleware);
-  
-  // Register the Bull Board plugin within this context
-  const serverAdapter = new FastifyAdapter();
-  serverAdapter.setBasePath("/admin/queues");
-  
-  // Create Bull Board with all queues
-  createBullBoard({
-    queues: [
-      new BullMQAdapter(myQueue), 
-      new BullMQAdapter(sendEmailQueue),
-      new BullMQAdapter(scheduledEmailQueue),
-      new BullMQAdapter(sendSMSQueue),
-      new BullMQAdapter(scheduledSMSQueue)
-    ],
-    serverAdapter,
-  });
-  
-  // Register the Bull Board plugin
-  instance.register(serverAdapter.registerPlugin(), {
-    prefix: "/admin/queues",
-    basePath: "/admin/queues",
-  });
-}, { prefix: '/admin/queues' });
+  },
+});
 
 // Register static file serving for the UI
 fastify.register(fastifyStatic, {

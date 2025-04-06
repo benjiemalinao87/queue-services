@@ -25,7 +25,7 @@ async function sendSMSViaAPI(data: SMSData) {
     },
     body: JSON.stringify({
       to: phoneNumber,
-      previewText: message, // Use previewText instead of message for compatibility with the backend API
+      message,
       contactId,
       workspaceId,
       mediaUrl, // Include mediaUrl in the request if present
@@ -234,7 +234,7 @@ export const smsBatchWorker = new Worker(
                   },
                   body: JSON.stringify({
                     to: data.to,
-                    previewText: data.message, // Use previewText instead of message for compatibility with the backend API
+                    message: data.message,
                     contactId: data.contactId,
                     workspaceId: data.workspaceId,
                     ...(data.metadata || {}),
