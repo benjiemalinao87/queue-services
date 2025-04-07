@@ -23,6 +23,9 @@ export const env = createEnv({
     // Email API
     EMAIL_API_URL: z.string().default("https://cc.automate8.com"),
     
+    // Queue Service URL
+    QUEUE_SERVICE_URL: z.string().default("https://secivres-eueuq.customerconnects.app"),
+    
     // Server
     PORT: z.coerce.number().default(3000),
     HOST: z.string().default("0.0.0.0"),
@@ -44,10 +47,13 @@ export const env = createEnv({
     BULL_BOARD_PASSWORD: process.env.BULL_BOARD_PASSWORD,
     
     // SMS API
-    SMS_API_URL: "https://cc.automate8.com",
+    SMS_API_URL: process.env.SMS_API_URL || "https://cc.automate8.com",
     
     // Email API
-    EMAIL_API_URL: "https://cc.automate8.com",
+    EMAIL_API_URL: process.env.EMAIL_API_URL || "https://cc.automate8.com",
+    
+    // Queue Service URL
+    QUEUE_SERVICE_URL: process.env.QUEUE_SERVICE_URL || "https://secivres-eueuq.customerconnects.app",
     
     // Server
     PORT: process.env.PORT,

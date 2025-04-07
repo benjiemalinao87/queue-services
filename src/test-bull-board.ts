@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { env } from './env';
 
 // Bull Board UI URL
-const BULL_BOARD_URL = 'https://queue-services-production.up.railway.app/ui';
+const BULL_BOARD_URL = `${env.QUEUE_SERVICE_URL}/admin/queues`;
 const BULL_BOARD_USERNAME = 'admin';
 const BULL_BOARD_PASSWORD = 'admin123';
 

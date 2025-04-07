@@ -1,9 +1,10 @@
 // Test script to send MMS via the queue service API endpoint
 import fetch from 'node-fetch';
 import { randomUUID } from 'crypto';
+import { env } from './src/env.js';
 
 // Configuration
-const QUEUE_SERVICE_URL = 'https://queue-services-production.up.railway.app';
+const QUEUE_SERVICE_URL = process.env.QUEUE_SERVICE_URL || env.QUEUE_SERVICE_URL;
 const WORKSPACE_ID = '66338';
 const TEST_PHONE = '+16267888830';
 const TEST_CONTACT_ID = '2d3f28ca-1cd5-4d41-89bb-04b605401e72';

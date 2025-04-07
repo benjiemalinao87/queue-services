@@ -16,14 +16,18 @@
 import fetch from 'node-fetch';
 import { randomUUID } from 'crypto';
 import readline from 'readline';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 // Configuration - CHANGE THESE VALUES
 const API_URL = process.env.API_URL || 'https://cc.automate8.com';
-const QUEUE_SERVICE_URL = process.env.QUEUE_SERVICE_URL || 'https://queue-services-production.up.railway.app';
-const WORKSPACE_ID = process.env.TEST_WORKSPACE_ID || '66338'; // Updated with your actual workspace ID
+const QUEUE_SERVICE_URL = process.env.QUEUE_SERVICE_URL || 'https://secivres-eueuq.customerconnects.app';
+const WORKSPACE_ID = process.env.TEST_WORKSPACE_ID || '15213'; // Updated with your actual workspace ID
 const TEST_EMAIL = process.env.TEST_EMAIL || 'benjiemalinao87@gmail.com'; // Updated with your actual email
-const TEST_PHONE = process.env.TEST_PHONE || '+16267888830'; // Updated with your actual phone number
-const TEST_CONTACT_ID = process.env.TEST_CONTACT_ID || '2d3f28ca-1cd5-4d41-89bb-04b605401e72';
+const TEST_PHONE = process.env.TEST_PHONE || '+16266635938'; // Updated with your actual phone number
+const TEST_CONTACT_ID = process.env.TEST_CONTACT_ID || 'fc7b218e-ce7c-4317-8555-b62a91772598';
 
 // Create readline interface for interactive mode
 const rl = readline.createInterface({
