@@ -23,9 +23,13 @@ export const aiResponseWorker = new Worker<AIResponseData>(
       await job.updateProgress(100);
 
       return response.data;
-    } catch (error) {
+    } catch (error: unknown) {
       // Log error for monitoring
-      await job.log(`Error processing AI response: ${error.message}`);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Unknown error occurred';
+      
+      await job.log(`Error processing AI response: ${errorMessage}`);
       
       // Throw error to trigger job retry
       throw error;
