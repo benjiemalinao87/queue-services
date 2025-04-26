@@ -8,11 +8,14 @@ import { fileURLToPath } from "url";
 import { sendEmailQueue, scheduledEmailQueue } from "./queues/email-queue";
 import { myQueue } from "./queues/my-queue";
 import { sendSMSQueue, scheduledSMSQueue } from "./queues/sms-queue";
+import { aiResponseQueue } from "./queues/ai-response-queue";
 import { env } from "./env";
 import metricsRoutes from "./routes/metrics";
+import aiResponseRoutes from "./routes/ai-response";
 import { startBatchProcessing } from '@/utils/metrics';
 import { sendSMSWorker, scheduledSMSWorker, smsBatchWorker } from './worker/sms-worker';
 import { emailWorker, scheduledEmailWorker, emailBatchWorker } from './worker/email-worker';
+import { aiResponseWorker } from './worker/ai-response-worker';
 
 // Get current file path and directory for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -88,7 +91,8 @@ createBullBoard({
     new BullMQAdapter(sendEmailQueue),
     new BullMQAdapter(scheduledEmailQueue),
     new BullMQAdapter(sendSMSQueue),
-    new BullMQAdapter(scheduledSMSQueue)
+    new BullMQAdapter(scheduledSMSQueue),
+    new BullMQAdapter(aiResponseQueue)
   ],
   serverAdapter,
 });
@@ -299,6 +303,9 @@ fastify.post<{
 // Register metrics routes
 fastify.register(metricsRoutes, { prefix: '/metrics' });
 
+// Register AI response routes
+fastify.register(aiResponseRoutes, { prefix: '/api/ai-response' });
+
 // Add a health check endpoint
 fastify.get("/health", async () => {
   return { status: "ok", timestamp: new Date().toISOString() };
@@ -421,6 +428,20 @@ const start = async () => {
     
     emailBatchWorker.on('failed', (job: any, err: Error) => {
       console.error(`Email batch job ${job?.id} failed: ${err}`);
+    });
+    
+    // Add event handlers for AI response worker
+    aiResponseWorker.on('completed', (job: any) => {
+      console.log(`AI response job ${job.id} completed`);
+      // Update metrics if needed
+      console.log(`Successfully processed AI response for message ${job.data.message_id} in workspace ${job.data.workspace_id}`);
+    });
+    
+    aiResponseWorker.on('failed', (job: any, err: Error) => {
+      console.error(`AI response job ${job?.id} failed: ${err}`);
+      if (job?.data?.workspace_id) {
+        console.error(`Failed to process AI response for message ${job.data.message_id} in workspace ${job.data.workspace_id}: ${err.message}`);
+      }
     });
     
     console.log('Queue workers started successfully');
