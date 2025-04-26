@@ -511,3 +511,48 @@ const emailCount = data.email && data.email.totalProcessed ? data.email.totalPro
   2. Provide default values for all potentially missing data
   3. Use optional chaining and nullish coalescing when available
   4. Structure code to be resilient to API changes
+
+## Worker Integration in Bull Dashboard
+
+### Proper Registration of All Queue Workers
+
+- **Problem**: The AI response worker was not properly integrated into the Bull dashboard monitoring, causing it to be invisible in monitoring tools and not included in graceful shutdown procedures.
+
+- **Solution**: Updated the worker/index.ts file to properly incorporate the AI response worker by:
+  1. Importing the worker module
+  2. Adding it to the graceful shutdown function
+  3. Logging its concurrency and rate limit settings
+  4. Exporting the module
+
+- **Implementation**:
+  ```typescript
+  // Import the worker
+  import { aiResponseWorker } from "./ai-response-worker";
+
+  // Add to graceful shutdown
+  export async function gracefulShutdown() {
+    console.log("Shutting down workers...");
+    await Promise.all([
+      smsWorker.close(),
+      emailWorker.close(),
+      aiResponseWorker.close()
+    ]);
+  }
+
+  // Log worker configuration
+  console.log(`AI Response Worker concurrency: ${aiResponseWorker.concurrency}`);
+  console.log(`AI Response Worker rate limit: ${aiResponseWorker.rateLimit}`);
+
+  // Export the worker
+  export * from "./ai-response-worker";
+  ```
+
+### Best Practices for Worker Registration
+
+1. **Complete Worker Registration**: Always make sure all worker modules are properly imported, registered for shutdown, and exported.
+
+2. **Logging Configuration**: Log the configuration of all workers during startup to confirm they're properly initialized.
+
+3. **Consistent Export Pattern**: Use a consistent pattern for exporting worker modules to ensure they're accessible from the main worker index.
+
+4. **Graceful Shutdown**: Include all workers in the graceful shutdown function to prevent resource leaks and incomplete jobs.
