@@ -25,20 +25,24 @@ const aiResponseRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =>
         jobId: job.id,
         message: 'AI response job added to queue'
       };
-    } catch (error) {
+    } catch (error: unknown) {
       fastify.log.error(error);
       
-      if (error.message?.includes('Rate limit exceeded')) {
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Unknown error occurred';
+      
+      if (error instanceof Error && errorMessage.includes('Rate limit exceeded')) {
         return reply.code(429).send({
           success: false,
-          error: error.message,
+          error: errorMessage,
           message: 'Rate limit exceeded for AI responses'
         });
       }
       
       return reply.code(400).send({
         success: false,
-        error: error.message,
+        error: errorMessage,
         message: 'Failed to add AI response job to queue'
       });
     }
