@@ -9,6 +9,7 @@
 - A queueing system with [BullMQ](https://docs.bullmq.io/) and Redis;
 - A dashboard built with [bull-board](https://github.com/felixmosh/bull-board) and [Fastify](https://fastify.dev/);
 - Run services through [pm2](https://pm2.keymetrics.io/).
+- AI response processing with rate limiting and async callbacks.
 
 ## 🚦 Batch Limits Implementation
 
@@ -31,11 +32,13 @@ queue-services/
 │   │   └── queue.config.ts       # Queue configuration with limiter settings
 │   ├── queues/
 │   │   ├── email.queue.ts        # Email queue with batch settings
-│   │   └── sms.queue.ts          # SMS queue with batch settings  
+│   │   ├── sms.queue.ts          # SMS queue with batch settings  
+│   │   └── ai-response-queue.ts  # AI response queue with rate limiting
 │   ├── worker/
 │   │   ├── index.ts              # Main worker file
 │   │   ├── email.worker.ts       # Email worker with batch processing
-│   │   └── sms.worker.ts         # SMS worker with batch processing
+│   │   ├── sms.worker.ts         # SMS worker with batch processing
+│   │   └── ai-response-worker.ts # AI response worker with callbacks
 │   ├── utils/
 │   │   └── metrics.ts            # Metrics for monitoring batch performance
 │   └── routes/
@@ -55,7 +58,7 @@ queue-services/
                                                                            ▼
                                                                     ┌────────────────┐
                                                                     │ External APIs  │
-                                                                    │ (SMS/Email)    │
+                                                                    │ (SMS/Email/AI) │
                                                                     └────────────────┘
 ```
 
@@ -84,6 +87,76 @@ The batch processing system can be monitored through:
 3. **Logs**: Check the console logs for detailed information
 
 For more detailed information, see the [Batch Processing Guide](./batch-processing-guide.md).
+
+## 🧠 AI Response Queue System
+
+### 📝 Use Cases
+
+The AI response queue system provides:
+
+1. **Asynchronous AI Processing**: Handle AI response generation without blocking users
+2. **Rate Limiting**: Control the rate of AI requests per workspace and per contact
+3. **Callback Mechanism**: Send AI responses back to the main application via callbacks
+4. **Error Handling**: Manage failed AI requests with retry mechanisms
+
+### 🗂️ Implementation Files
+
+```
+queue-services/
+├── src/
+│   ├── queues/
+│   │   └── ai-response-queue.ts       # AI queue with rate limiting
+│   ├── queues/schemas/
+│   │   └── ai-response-schema.ts      # Validation schema for AI requests
+│   └── worker/
+│       └── ai-response-worker.ts      # Worker that processes AI requests
+```
+
+### 🔑 Key Configuration Parameters
+
+- **Rate Limits**: Separate limits for workspaces and contacts
+  ```typescript
+  // Rate limiting configuration
+  export const rateLimitConfig = {
+    perWorkspace: {
+      points: 100, // 100 requests per minute per workspace
+      duration: 60,
+    },
+    perContact: {
+      points: 5,   // 5 requests per minute per contact
+      duration: 60,
+    },
+  };
+  ```
+
+- **Worker Configuration**: Process AI requests efficiently
+  ```typescript
+  {
+    concurrency: 5, // Process 5 AI requests concurrently
+    limiter: {
+      max: 10,      // Maximum of 10 jobs processed
+      duration: 1000, // Per second
+    },
+  }
+  ```
+
+### 📡 Usage
+
+To use the AI response queue system:
+
+1. **Add a job to the queue**:
+   ```typescript
+   await addAIResponseJob({
+     workspace_id: "your-workspace-id",
+     contact_id: "contact-id",
+     message_id: "message-id",
+     message_text: "User message to process",
+     callback_url: "https://your-app.com/api/ai-callback",
+     rate_limit_key: "workspace-id:contact-id"
+   });
+   ```
+
+2. **Implement a callback endpoint** in your main application to receive the AI responses
 
 ## 🚀 Install and run the project
 
