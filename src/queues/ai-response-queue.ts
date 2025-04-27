@@ -2,11 +2,17 @@ import { Queue } from "bullmq";
 import { connection, defaultQueueOpts } from "./configs";
 import { aiResponseSchema, type AIResponseData, rateLimitConfig } from "./schemas/ai-response-schema";
 import Redis from "ioredis";
+import { env } from "@/env";
 
 const QUEUE_NAME = "ai-response-queue";
 
-// Create Redis client for rate limiting
-const redisClient = new Redis(connection);
+// Create Redis client for rate limiting using environment variables
+const redisClient = new Redis({
+  host: env.REDIS_HOST,
+  port: env.REDIS_PORT,
+  username: env.REDIS_USER || undefined,
+  password: env.REDIS_PASSWORD || undefined,
+});
 
 // Rate limiting helper functions
 const getRateLimitKey = (type: "workspace" | "contact", key: string) => 

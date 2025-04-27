@@ -110,7 +110,100 @@ queue-services/
 │   │   └── ai-response-schema.ts      # Validation schema for AI requests
 │   └── worker/
 │       └── ai-response-worker.ts      # Worker that processes AI requests
+├── test-ai-response.js                # Direct test using queue function
+└── test-direct-ai-response.js         # API endpoint test
 ```
+
+### 📊 Understanding the AI Response Flow
+
+For new interns and developers, here's a detailed breakdown of how the AI response flow works:
+
+#### 🔄 Complete Flow Diagram
+
+```
+┌─────────────┐     ┌─────────────────┐     ┌─────────────────┐     ┌───────────────┐
+│  Frontend   │────▶│ Queue API       │────▶│ AI Response     │────▶│ AI Response   │
+│  Application│     │ /api/ai-response│     │ Queue           │     │ Worker        │
+└─────────────┘     └─────────────────┘     └─────────────────┘     └───────────────┘
+                                                                             │
+                                                                             ▼
+┌─────────────┐     ┌─────────────────┐                            ┌───────────────┐
+│  Frontend   │◀────│ Backend API     │◀───────────────────────────│ AI Service    │
+│  (Display)  │     │ (Callback URL)  │                            │ (Processing)  │
+└─────────────┘     └─────────────────┘                            └───────────────┘
+```
+
+#### 🔢 Step-by-Step Process
+
+1. **Request Initiation** 
+   - Frontend sends user message to `/api/ai-response` endpoint
+   - Required parameters: `workspace_id`, `contact_id`, `message_id`, `message_text`, `callback_url`
+
+2. **Queue Addition**
+   - API validates request data using `aiResponseSchema`
+   - Performs rate limit checks (per workspace and per contact)
+   - Adds job to `ai-response-queue` with unique ID
+
+3. **Worker Processing**
+   - `aiResponseWorker` picks up the job from the queue
+   - Generates AI response (real or simulated)
+   - Formats data based on callback endpoint type
+
+4. **Callback Execution**
+   - Worker sends formatted response to the `callback_url`
+   - Different payload formats supported:
+     - Standard AI response format
+     - SMS-compatible format (when using SMS endpoint)
+
+5. **Response Delivery**
+   - Backend API receives callback data
+   - Processes and delivers to the frontend
+   - User sees the AI-generated response
+
+#### 🛠️ Adaptive Callback Format
+
+The worker intelligently adapts its payload format based on the callback URL:
+
+```typescript
+// For SMS endpoint callbacks
+{
+  to: contactId,             // Phone number
+  message: aiResponseText,   // AI-generated text
+  workspaceId: workspaceId,  // Workspace identifier
+  contactId: contactId,      // Contact identifier
+  metadata: {
+    source: "ai_response",
+    messageId: messageId,
+    job_id: jobId
+  }
+}
+
+// For dedicated AI response endpoints
+{
+  workspace_id: workspaceId,
+  message_id: messageId,
+  job_id: jobId,
+  response_text: aiResponseText
+}
+```
+
+#### 🔎 Monitoring and Debugging
+
+For developers working on AI response integration:
+
+1. **Bull Dashboard**: Monitor jobs at `/admin/queues`
+   - Check job status (waiting, active, completed, failed)
+   - Review job data and results
+   - See processing times and retry counts
+
+2. **Worker Logs**: View detailed logs with `pnpm pm2 logs`
+   - Filter for AI responses: `pnpm pm2 logs | grep -i ai-response`
+   - See processing steps and error messages
+
+3. **Testing Tools**:
+   - `test-direct-ai-response.js`: Test the API endpoint
+   - `test-ai-response.js`: Test direct queue function
+   - Check `lessons_learn.md` for troubleshooting tips
 
 ### 🔑 Key Configuration Parameters
 
@@ -157,6 +250,29 @@ To use the AI response queue system:
    ```
 
 2. **Implement a callback endpoint** in your main application to receive the AI responses
+   ```typescript
+   // Example Express route handler
+   app.post('/api/ai-callback', (req, res) => {
+     const { workspace_id, message_id, response_text } = req.body;
+     
+     // Process the AI response
+     // Store in database, emit to websocket, etc.
+     
+     res.json({ success: true });
+   });
+   ```
+
+3. **Testing Implementation**
+   ```bash
+   # Test via API endpoint
+   node test-direct-ai-response.js
+   
+   # Test via direct queue function
+   node test-ai-response.js
+   
+   # Check worker logs for processing
+   pnpm pm2 logs | grep -i ai-response
+   ```
 
 ## 🚀 Install and run the project
 

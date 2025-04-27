@@ -98,11 +98,12 @@ createBullBoard({
 });
 
 // Register the Bull Board plugin
+// @ts-ignore - Ignoring type errors in the Bull Board plugin registration
 fastify.register(serverAdapter.registerPlugin(), {
   prefix: "/admin/queues",
   basePath: "/admin/queues",
   // Add basic authentication
-  beforeHandle: async (request, reply) => {
+  beforeHandle: async (request: { headers: { authorization?: string } }, reply: { header: (name: string, value: string) => void; code: (statusCode: number) => { send: (body: string) => void } }) => {
     const auth = request.headers.authorization;
     
     // Check if auth header exists and is in the correct format
@@ -113,7 +114,7 @@ fastify.register(serverAdapter.registerPlugin(), {
     }
     
     // Decode the base64 auth string
-    const [username, password] = Buffer.from(auth.split(" ")[1], "base64")
+    const [username, password] = Buffer.from(auth.split(" ")[1]!, "base64")
       .toString()
       .split(":");
     
