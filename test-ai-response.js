@@ -1,6 +1,12 @@
 // Test script for adding jobs to the AI response queue
-require('dotenv').config();
-const { addAIResponseJob } = require('./dist/queues/ai-response-queue');
+import dotenv from 'dotenv';
+import { addAIResponseJob } from './dist/queues/ai-response-queue.js';
+
+dotenv.config();
+
+// Set environment variables for production if needed
+process.env.API_URL = process.env.API_URL || 'https://secivres-eueuq.customerconnects.app';
+process.env.APP_API_URL = process.env.APP_API_URL || 'https://cc.automate8.com/api/ai-response/callback';
 
 async function testAIResponseQueue() {
   try {
@@ -15,7 +21,7 @@ async function testAIResponseQueue() {
     //    the processed AI response (similar to how the SMS worker calls the SMS API)
     // 2. This callback endpoint should be an actual endpoint in your application
     //    that can handle the AI response
-    const callback_url = process.env.APP_API_URL || 'https://cc.automate8.com/api/ai-response/callback';
+    const callback_url = process.env.APP_API_URL;
     
     const rate_limit_key = `${workspace_id}:${contact_id}`; // Format specified in schema
     
