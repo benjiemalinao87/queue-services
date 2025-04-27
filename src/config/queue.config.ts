@@ -12,10 +12,14 @@ import { env } from "@/env";
 const RAILWAY_PROXY_HOST = 'caboose.proxy.rlwy.net';
 const RAILWAY_PROXY_PORT = 58064;
 
+// Redis server details - using the actual Redis hostname from Railway
+const REDIS_HOSTNAME = 'redis.customerconnects.app';
+const REDIS_PORT = 6379;
+
 // Determine which connection to use based on environment
 const isLocalDev = env.NODE_ENV === 'development';
 
-// Use the proxy for local development, and internal connection for production
+// Use the proxy for local development, and direct hostname for production
 export const connection: ConnectionOptions = isLocalDev 
   ? {
       // Use Railway proxy for local development
@@ -30,9 +34,9 @@ export const connection: ConnectionOptions = isLocalDev
       }
     }
   : {
-      // Use internal connection for production (when running on Railway)
-      host: env.REDIS_HOST,
-      port: env.REDIS_PORT,
+      // Use direct Redis hostname instead of internal hostname
+      host: env.REDIS_HOST || REDIS_HOSTNAME, // Use env var if set, otherwise use our constant
+      port: env.REDIS_PORT || REDIS_PORT,
       username: env.REDIS_USER,
       password: env.REDIS_PASSWORD,
       family: 0, // 4 (IPv4) or 6 (IPv6)

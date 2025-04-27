@@ -655,12 +655,16 @@ The solution involves implementing proper connection fallbacks and environment-s
 1. Update Redis connection configuration to use a reliable hostname
 2. Implement connection retry logic with proper error handling
 3. Use different connection settings for different environments:
-   - For production, use `redis.railway.internal` for internal Railway networking
+   - For production, use the actual Redis hostname (`redis.customerconnects.app`) instead of relying on internal DNS
    - For external access (development), use the public endpoint with appropriate credentials
    - Add proper connection timeout and retry mechanisms
 
 ### Code Implementation
 ```typescript
+// Define a direct Redis hostname instead of relying on internal DNS
+const REDIS_HOSTNAME = 'redis.customerconnects.app';
+const REDIS_PORT = 6379;
+
 // In your configuration file
 export const connection: ConnectionOptions = process.env.NODE_ENV === 'development'
   ? {
@@ -672,13 +676,15 @@ export const connection: ConnectionOptions = process.env.NODE_ENV === 'developme
       maxRetriesPerRequest: 3
     }
   : {
-      // Use internal connection for production (when running on Railway)
-      host: process.env.REDIS_HOST || 'redis.railway.internal',
-      port: parseInt(process.env.REDIS_PORT || '6379', 10),
-      username: process.env.REDIS_USER,
-      password: process.env.REDIS_PASSWORD,
+      // Use direct Redis hostname instead of internal hostname
+      host: env.REDIS_HOST || REDIS_HOSTNAME, // Use env var if set, otherwise use constant
+      port: env.REDIS_PORT || REDIS_PORT,
+      username: env.REDIS_USER,
+      password: env.REDIS_PASSWORD,
       reconnectStrategy: (retries) => Math.min(retries * 100, 3000), // Exponential backoff
-      maxRetriesPerRequest: 3
+      maxRetriesPerRequest: 3,
+      enableOfflineQueue: true,
+      enableReadyCheck: true
     };
 ```
 
@@ -687,6 +693,7 @@ export const connection: ConnectionOptions = process.env.NODE_ENV === 'developme
 2. **Use environment-specific configurations** to handle different deployment scenarios
 3. **Add connection retry mechanisms** to handle temporary network issues
 4. **Set appropriate timeouts** to prevent hanging processes
-5. **Monitor Redis connection status** to quickly identify and resolve issues
-6. **Keep credentials in environment variables** rather than hardcoded
-7. **Test connection in different environments** before deployment
+5. **Use direct hostnames** instead of relying on internal DNS names that might not resolve correctly
+6. **Monitor Redis connection status** to quickly identify and resolve issues
+7. **Keep credentials in environment variables** rather than hardcoded
+8. **Test connection in different environments** before deployment
