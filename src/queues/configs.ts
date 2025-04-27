@@ -16,19 +16,19 @@ const isLocalDev = env.NODE_ENV === 'development';
 
 // Common connection options for better error handling and memory optimization
 const commonOptions = {
-  enableReadyCheck: false, // Reduce overhead by disabling ready check
-  maxRetriesPerRequest: 3, // Reduced from 5 to reduce memory overhead
+  enableReadyCheck: true, // Re-enable ready check for stability
+  maxRetriesPerRequest: 5, // Increase max retries 
   retryStrategy: (times: number) => {
-    const delay = Math.min(times * 100, 3000); // Increase delay with each retry, max 3s
-    if (times < 3) { // Only log initial retries to reduce log spam
+    const delay = Math.min(times * 200, 5000); // Increase delay with each retry, max 5s
+    if (times < 5) { // Only log initial retries to reduce log spam
       console.log(`Redis connection retry attempt ${times} with delay ${delay}ms`);
     }
     return delay;
   },
-  connectTimeout: 5000, // Reduced from 10000 to 5000ms
-  disconnectTimeout: 5000, // Reduced from 10000 to 5000ms
-  commandTimeout: 5000, // Reduced from 10000 to 5000ms
-  family: 4, // Use IPv4 only to reduce lookup time
+  connectTimeout: 15000, // Increased from 5000ms to 15000ms
+  disconnectTimeout: 10000, // Increased to 10000ms
+  commandTimeout: 15000, // Increased from 5000ms to 15000ms
+  family: 0, // Try both IPv4 and IPv6 again
   reconnectOnError: (err) => {
     const targetError = "READONLY";
     if (err.message.includes(targetError)) {
@@ -36,13 +36,12 @@ const commonOptions = {
     }
     return false;
   },
-  // Add memory optimization settings
-  keyPrefix: '', // Don't use prefix to save memory
+  // Keep some memory optimization settings but remove ones causing issues
   showFriendlyErrorStack: false, // Disable friendly error stack in production
-  maxLoadingRetryTime: 2000, // Limit retry time
-  autoResubscribe: false, // Disable auto resubscribe to reduce background operations
-  autoResendUnfulfilledCommands: false, // Disable auto resend to reduce memory usage
-  lazyConnect: true, // Connect only when needed
+  maxLoadingRetryTime: 5000, // Increased from 2000ms
+  autoResubscribe: true, // Re-enable auto resubscribe for stability
+  autoResendUnfulfilledCommands: true, // Re-enable auto resend for stability
+  lazyConnect: false, // Connect immediately to avoid timing issues
 };
 
 // Use the proxy for local development, and internal connection for production
