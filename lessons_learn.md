@@ -556,3 +556,75 @@ const emailCount = data.email && data.email.totalProcessed ? data.email.totalPro
 3. **Consistent Export Pattern**: Use a consistent pattern for exporting worker modules to ensure they're accessible from the main worker index.
 
 4. **Graceful Shutdown**: Include all workers in the graceful shutdown function to prevent resource leaks and incomplete jobs.
+
+## AI Response Queue Integration
+
+### Understanding the AI Response Flow
+
+The AI response queue provides a way to process user messages with AI and return responses. Here's how it works:
+
+1. **Message Submission**: A frontend application sends a message to the queue service with:
+   - `workspace_id` - Identifier for the workspace
+   - `contact_id` - Identifier for the contact/user
+   - `message_id` - Unique identifier for the message
+   - `message_text` - The actual user query to be processed
+   - `callback_url` - Where to send the AI's response
+   - `rate_limit_key` - Used for rate limiting
+
+2. **Queue Processing**: The message is added to the `ai-response-queue` and picked up by the worker.
+
+3. **AI Generation**: The worker processes the message with AI (or simulates a response for testing).
+
+4. **Callback Execution**: The worker sends the AI response to the provided callback URL.
+
+5. **Frontend Delivery**: The backend receives the callback and delivers the response to the user.
+
+### Implementation Notes
+
+- **Callback Format Flexibility**: The worker supports different callback formats based on the endpoint:
+  ```typescript
+  // For SMS endpoint
+  {
+    to: contactId,
+    message: aiResponseText,
+    workspaceId: workspaceId,
+    // Other SMS-specific fields
+  }
+
+  // For dedicated AI response endpoint
+  {
+    workspace_id: workspaceId,
+    message_id: messageId,
+    job_id: jobId,
+    response_text: aiResponseText
+  }
+  ```
+
+- **Testing Approaches**: For testing, you can:
+  1. Use the SMS endpoint as a callback (since it exists)
+  2. Create a dedicated endpoint for AI responses
+  3. Use a test endpoint like webhook.site to see the raw callback data
+
+### Troubleshooting
+
+- **Failed Jobs**: Check job logs to see why jobs fail. Common reasons:
+  - Callback URL doesn't exist
+  - Callback expects different parameters
+  - Network issues between services
+
+- **Monitoring**: Use the Bull Dashboard to monitor the queue:
+  - Active jobs - Currently being processed
+  - Completed jobs - Successfully processed
+  - Failed jobs - Failed to process (red in the dashboard)
+
+### Next Steps for Production
+
+For a production-ready AI response system:
+
+1. **Connect to a Real AI Service**: Replace the simulated response with calls to OpenAI or another AI provider.
+
+2. **Create a Dedicated Callback Endpoint**: Implement a specific endpoint for handling AI responses.
+
+3. **Add Metrics Tracking**: Track AI response times, success rates, and other metrics.
+
+4. **Implement Error Recovery**: Add logic to handle different types of failures and retry strategies.
