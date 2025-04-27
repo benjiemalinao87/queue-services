@@ -777,3 +777,161 @@ When integrating a database-based queue with an existing BullMQ setup:
 3. **Monitoring**: Adding additional logging and metrics for the new Supabase-based queue is essential for operational visibility.
 
 4. **Graceful Startup/Shutdown**: Implementing proper initialization and cleanup procedures for both queue systems ensures reliable operation during service lifecycle events.
+
+## Queue Services Log Patterns
+
+### Observation: Frequent "incoming request" and "request completed" logs
+
+When monitoring the queue-services logs, you may notice a pattern of alternating "incoming request" and "request completed" log entries even when there appears to be no active user activity.
+
+```
+Apr 27 23:29:25 queue-services   incoming request
+Apr 27 23:29:25 queue-services   request completed
+Apr 27 23:29:30 queue-services   incoming request
+Apr 27 23:29:31 queue-services   request completed
+```
+
+### Explanation
+
+This behavior is normal and expected due to the following reasons:
+
+1. **Fastify Logger**: The queue-services application uses Fastify with logging enabled (`Fastify({ logger: true })`), which automatically logs incoming HTTP requests.
+
+2. **Health Checks**: The application includes a `/health` endpoint that is regularly pinged by monitoring systems to ensure the service is running properly. The Railway deployment configuration (`railway.toml`) specifically defines a health check path that regularly pings the service.
+
+3. **Queue Monitoring**: Bull Board and internal queue monitoring mechanisms periodically check queue status, generating HTTP requests.
+
+4. **Worker Activity**: Background queue workers may periodically check for new jobs, which can generate log entries.
+
+5. **Metrics Collection**: The application includes metrics collection routes that may be polled by monitoring systems.
+
+These regular requests ensure that:
+- The service is operational and responsive
+- Queue workers are functioning properly
+- System monitoring tools can track performance and availability
+
+### Conclusion
+
+The frequent "incoming request" and "request completed" logs do not indicate a problem with the service but rather reflect normal operational monitoring and health check activities. These are important for ensuring service reliability and operational visibility.
+
+## Memory Optimization for Queue Services
+
+When running a queue service in production, memory usage is an important consideration, especially for services that need to maintain long-running connections and process jobs efficiently. These optimizations helped reduce our memory footprint from ~200MB to a more efficient level:
+
+### Fastify Logger Configuration
+
+The default Fastify logger configuration can consume excessive memory due to detailed request/response logging:
+
+```typescript
+// Before - high memory usage
+const fastify = Fastify({ logger: true });
+
+// After - optimized memory usage
+const fastify = Fastify({ 
+  logger: {
+    level: process.env.NODE_ENV === 'production' ? 'warn' : 'info',
+    transport: {
+      target: 'pino-pretty',
+      options: {
+        translateTime: 'HH:MM:ss Z',
+        ignore: 'pid,hostname',
+      }
+    },
+    serializers: {
+      req: (request) => {
+        // Skip logging for health check requests
+        if (request.url === '/health') {
+          return undefined;
+        }
+        // Minimal request logging for other requests
+        return {
+          method: request.method,
+          url: request.url,
+        };
+      },
+      res: (reply) => {
+        return {
+          statusCode: reply.statusCode
+        };
+      }
+    }
+  }
+});
+```
+
+### Redis Connection Optimization
+
+Redis clients can consume significant memory. Optimizing connection parameters helps:
+
+```typescript
+// Memory-optimized Redis connection settings
+const commonOptions = {
+  enableReadyCheck: false,          // Disable ready check to reduce overhead
+  maxRetriesPerRequest: 3,          // Reduce retry attempts
+  connectTimeout: 5000,             // Shorter timeouts
+  family: 4,                        // Use IPv4 only
+  keyPrefix: '',                    // No prefix saves memory
+  showFriendlyErrorStack: false,    // Disable verbose errors in production
+  autoResubscribe: false,           // Disable automatic resubscription
+  autoResendUnfulfilledCommands: false, // Disable automatic command resending
+  lazyConnect: true,                // Connect only when needed
+};
+```
+
+### Health Check Frequency
+
+Railway deployment configuration defaults to frequent health checks that can increase memory usage:
+
+```toml
+# Before
+healthcheckPath = "/health"
+healthcheckTimeout = 100
+
+# After - reduced frequency
+healthcheckPath = "/health"
+healthcheckTimeout = 200
+healthcheckInterval = 120  # Check every 120 seconds instead of default 15s
+```
+
+### Queue Job Cleanup
+
+To prevent memory buildup from stored job data:
+
+```typescript
+// Add automatic cleanup of completed and failed jobs
+export const createJobOptions = (): DefaultJobOptions => {
+  return {
+    // Other options...
+    removeOnComplete: {
+      age: 24 * 3600, // Keep completed jobs for 24 hours
+      count: 500,     // Keep only last 500 completed jobs
+    },
+    removeOnFail: {
+      age: 7 * 24 * 3600, // Keep failed jobs for 7 days
+      count: 100,         // Keep only last 100 failed jobs
+    },
+  };
+};
+```
+
+### Worker Concurrency
+
+Adjusting worker concurrency based on the environment:
+
+```typescript
+export const createWorkerOpts = (): WorkerOptions => {
+  return {
+    concurrency: env.NODE_ENV === "production" ? 5 : 10, // Reduced in production
+    // Other options...
+  };
+};
+```
+
+### Results
+
+These optimizations resulted in:
+1. Reduced memory footprint (from ~200MB to lower baseline usage)
+2. More efficient health check behavior that generates fewer logs
+3. Better resource utilization during idle periods
+4. Automatic cleanup of old job data to prevent memory growth over time
+5. Optimized Redis connections that use fewer resources

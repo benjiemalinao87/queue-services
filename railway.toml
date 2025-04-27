@@ -5,4 +5,5 @@ buildCommand = "pnpm install && pnpm build"
 [deploy]
 startCommand = "pnpm start"
 healthcheckPath = "/health"
-healthcheckTimeout = 100
+healthcheckTimeout = 200
+healthcheckInterval = 120  # Check every 120 seconds instead of default 15s

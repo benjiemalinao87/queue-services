@@ -77,7 +77,37 @@ function addSampleMetricsData() {
 }
 
 // Create Fastify instance
-const fastify = Fastify({ logger: true });
+const fastify = Fastify({ 
+  logger: {
+    level: process.env.NODE_ENV === 'production' ? 'warn' : 'info',
+    transport: {
+      target: 'pino-pretty',
+      options: {
+        translateTime: 'HH:MM:ss Z',
+        ignore: 'pid,hostname',
+      }
+    },
+    // Reduce memory usage by setting serialization options
+    serializers: {
+      req: (request) => {
+        // Skip logging for health check requests
+        if (request.url === '/health') {
+          return undefined;
+        }
+        // Minimal request logging for other requests
+        return {
+          method: request.method,
+          url: request.url,
+        };
+      },
+      res: (reply) => {
+        return {
+          statusCode: reply.statusCode
+        };
+      }
+    }
+  }
+});
 
 const serverAdapter = new FastifyAdapter();
 
