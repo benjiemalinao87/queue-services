@@ -628,3 +628,65 @@ For a production-ready AI response system:
 3. **Add Metrics Tracking**: Track AI response times, success rates, and other metrics.
 
 4. **Implement Error Recovery**: Add logic to handle different types of failures and retry strategies.
+
+## Redis Connection Issues
+
+### Problem
+Our queue service was repeatedly failing with the error:
+```
+[ioredis] Unhandled error event: Error: getaddrinfo ENOTFOUND redis.railway.internal
+```
+
+This indicates a DNS resolution error - the application is trying to connect to `redis.railway.internal` but this hostname cannot be resolved.
+
+### Root Cause
+The error occurs when the application is running but cannot reach the Redis server at the configured hostname. This typically happens when:
+
+1. The Redis service is not running
+2. The hostname used for Redis is incorrect or not accessible from the environment
+3. DNS resolution is failing inside the containerized environment
+4. Network configuration issues preventing the connection
+
+In Railway deployments, `redis.railway.internal` is a special DNS name that only resolves within the Railway internal network. If the service is trying to use this hostname from a different network context (like local development or from a different cloud provider), the connection will fail.
+
+### Solution
+The solution involves implementing proper connection fallbacks and environment-specific configurations:
+
+1. Update Redis connection configuration to use a reliable hostname
+2. Implement connection retry logic with proper error handling
+3. Use different connection settings for different environments:
+   - For production, use `redis.railway.internal` for internal Railway networking
+   - For external access (development), use the public endpoint with appropriate credentials
+   - Add proper connection timeout and retry mechanisms
+
+### Code Implementation
+```typescript
+// In your configuration file
+export const connection: ConnectionOptions = process.env.NODE_ENV === 'development'
+  ? {
+      // Use public endpoint for local development
+      host: 'caboose.proxy.rlwy.net', // Public hostname
+      port: 58064, // Public port
+      password: process.env.REDIS_PASSWORD,
+      reconnectStrategy: (retries) => Math.min(retries * 100, 3000), // Exponential backoff
+      maxRetriesPerRequest: 3
+    }
+  : {
+      // Use internal connection for production (when running on Railway)
+      host: process.env.REDIS_HOST || 'redis.railway.internal',
+      port: parseInt(process.env.REDIS_PORT || '6379', 10),
+      username: process.env.REDIS_USER,
+      password: process.env.REDIS_PASSWORD,
+      reconnectStrategy: (retries) => Math.min(retries * 100, 3000), // Exponential backoff
+      maxRetriesPerRequest: 3
+    };
+```
+
+### Best Practices
+1. **Always implement error handling** for Redis connections
+2. **Use environment-specific configurations** to handle different deployment scenarios
+3. **Add connection retry mechanisms** to handle temporary network issues
+4. **Set appropriate timeouts** to prevent hanging processes
+5. **Monitor Redis connection status** to quickly identify and resolve issues
+6. **Keep credentials in environment variables** rather than hardcoded
+7. **Test connection in different environments** before deployment
