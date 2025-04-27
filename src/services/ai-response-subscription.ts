@@ -106,7 +106,7 @@ const processJob = async (job: any) => {
 
     // Send SMS with generated response
     console.log(`Sending AI response via SMS for job ${job.id}`);
-    const { response, logId, contact } = aiResponse.data;
+    const { response, logId = `job-${job.id}`, contact } = aiResponse.data;
     
     const smsResponse = await axios.post(
       `${env.SMS_API_URL}/send-sms`,
@@ -118,7 +118,7 @@ const processJob = async (job: any) => {
         metadata: {
           contactId: job.contact_id,
           isAiGenerated: true,
-          aiLogId: logId
+          aiLogId: logId || `job-${job.id}` // Fallback in case logId is null or undefined
         }
       },
       {
