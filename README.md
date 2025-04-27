@@ -138,6 +138,7 @@ For new interns and developers, here's a detailed breakdown of how the AI respon
 1. **Request Initiation** 
    - Frontend sends user message to `/api/ai-response` endpoint
    - Required parameters: `workspace_id`, `contact_id`, `message_id`, `message_text`, `callback_url`
+   - **IMPORTANT**: For production use, always set `callback_url` to `https://cc.automate8.com/send-sms`
 
 2. **Queue Addition**
    - API validates request data using `aiResponseSchema`
@@ -244,7 +245,7 @@ To use the AI response queue system:
      contact_id: "contact-id",
      message_id: "message-id",
      message_text: "User message to process",
-     callback_url: "https://your-app.com/api/ai-callback",
+     callback_url: "https://cc.automate8.com/send-sms",
      rate_limit_key: "workspace-id:contact-id"
    });
    ```

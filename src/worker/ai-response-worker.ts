@@ -2,9 +2,30 @@ import { Worker, type Job } from "bullmq";
 import { connection, defaultWorkerOpts } from "@/queues/configs";
 import type { AIResponseData } from "@/queues/schemas/ai-response-schema";
 import axios from "axios";
+import { initAIResponseSubscription } from "@/services/ai-response-subscription";
 
 const QUEUE_NAME = "ai-response-queue";
 
+// Start the Supabase subscription service
+let subscriptionCleanup: (() => void) | null = null;
+
+export const startAIResponseSubscription = () => {
+  if (!subscriptionCleanup) {
+    subscriptionCleanup = initAIResponseSubscription();
+    console.log("AI Response subscription service started");
+  }
+};
+
+export const stopAIResponseSubscription = () => {
+  if (subscriptionCleanup) {
+    subscriptionCleanup();
+    subscriptionCleanup = null;
+    console.log("AI Response subscription service stopped");
+  }
+};
+
+// Initialize the traditional BullMQ worker for backward compatibility
+// and integration with Bull Board monitoring
 export const aiResponseWorker = new Worker<AIResponseData>(
   QUEUE_NAME,
   async (job: Job<AIResponseData>) => {
@@ -69,7 +90,7 @@ export const aiResponseWorker = new Worker<AIResponseData>(
     concurrency: 5, // Process 5 jobs concurrently
     limiter: {
       max: 10, // Maximum number of jobs processed
-      duration: 1000, // Per second
+      duration: 1000, // per second
     },
   }
 );

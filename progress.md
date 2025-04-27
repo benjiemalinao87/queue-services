@@ -295,3 +295,54 @@
 - **Documentation Updates**:
   - Enhanced integration guide with information about the dashboard fixes
   - Added code examples for integrating with the updated dashboard
+
+## 2025-03-22: AI Auto-Responder Integration with Supabase Realtime
+
+### Completed Tasks
+
+- **Supabase Realtime Subscription Implementation**:
+  - Implemented a Supabase Realtime subscription to the `ai_response_queue` table for immediate job processing
+  - Created a fallback polling mechanism to handle any jobs that might be missed due to connection issues
+  - Added proper cleanup procedures for subscriptions during service shutdown
+  - Implemented comprehensive error handling for subscription events
+
+- **Rate Limiting Enhancements**:
+  - Implemented multi-level rate limiting for AI responses:
+    - Maximum 10 concurrent jobs processing
+    - Maximum 60 jobs per minute overall
+    - Maximum 5 messages per minute to the same contact
+  - Created Redis-based rate limiting with time windows using sorted sets
+  - Added composite rate limit keys (workspace_id:contact_id) for granular control
+
+- **Job Status Management**:
+  - Implemented job status transitions (pending → processing → complete/error/failed)
+  - Added attempt tracking with maximum retry limits (3 attempts)
+  - Enhanced error logging and status updates in the database
+  - Implemented exponential backoff for retries
+
+- **Integration with External APIs**:
+  - Connected to the AI generation endpoint at `https://cc.automate8.com/api/ai/generate-response`
+  - Implemented proper SMS delivery via the `/send-sms` endpoint
+  - Added comprehensive error handling for API interactions
+  - Updated environment configuration for API endpoints
+
+- **Environment Configuration**:
+  - Added Supabase connection details to environment variables
+  - Created a Supabase client utility for database interactions
+  - Updated documentation with new environment variables and integration details
+
+### Lessons Learned
+
+- Supabase Realtime provides more responsive job processing than traditional polling approaches
+- Implementing both realtime subscription and fallback polling creates a robust processing system
+- Redis-based rate limiting with sorted sets provides efficient time-window limiting
+- Maintaining backward compatibility with existing BullMQ infrastructure ensures smooth transition
+- Proper cleanup of subscriptions is essential to prevent resource leaks during service lifecycle events
+
+### Next Steps
+
+- Monitor the AI response processing to ensure jobs are being handled correctly
+- Add comprehensive metrics for AI response processing
+- Implement alerting for high error rates or backlogs
+- Enhance the dashboard to display AI response statistics
+- Consider implementing more sophisticated retry strategies based on error types

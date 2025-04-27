@@ -6,8 +6,9 @@ dotenv.config();
 
 // Set environment variables for production if needed
 process.env.API_URL = process.env.API_URL || 'https://secivres-eueuq.customerconnects.app';
-// Use the SMS endpoint as callback because it exists and works
+// Ensure we consistently use the SMS endpoint as callback
 process.env.APP_API_URL = process.env.APP_API_URL || 'https://cc.automate8.com/send-sms';
+console.log('Using callback URL:', process.env.APP_API_URL);
 
 async function testAIResponseQueue() {
   try {

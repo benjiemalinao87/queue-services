@@ -32,6 +32,11 @@ export const env = createEnv({
     
     // Metrics
     USE_SAMPLE_METRICS: z.enum(["true", "false"]).default("false"),
+    
+    // Supabase
+    SUPABASE_URL: z.string().default("https://ycwttshvizkotcwwyjpt.supabase.co"),
+    SUPABASE_ANON_KEY: z.string().default("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inljd3R0c2h2aXprb3Rjd3d5anB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgyNDQ5NzUsImV4cCI6MjA1MzgyMDk3NX0.7Mn5vXXre0KwW0lKgsPv1lwSXn5CiRjTRMw2RuH_55g"),
+    SUPABASE_SERVICE_ROLE_KEY: z.string().default("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inljd3R0c2h2aXprb3Rjd3d5anB0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczODI0NDk3NSwiZXhwIjoyMDUzODIwOTc1fQ.blOq_yJX-J-N7znR-4220THNruoI7j_bLONliOtukmQ"),
   },
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
@@ -61,6 +66,11 @@ export const env = createEnv({
     
     // Metrics
     USE_SAMPLE_METRICS: process.env.USE_SAMPLE_METRICS || "false",
+    
+    // Supabase
+    SUPABASE_URL: process.env.SUPABASE_URL || "https://ycwttshvizkotcwwyjpt.supabase.co",
+    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inljd3R0c2h2aXprb3Rjd3d5anB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgyNDQ5NzUsImV4cCI6MjA1MzgyMDk3NX0.7Mn5vXXre0KwW0lKgsPv1lwSXn5CiRjTRMw2RuH_55g",
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inljd3R0c2h2aXprb3Rjd3d5anB0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczODI0NDk3NSwiZXhwIjoyMDUzODIwOTc1fQ.blOq_yJX-J-N7znR-4220THNruoI7j_bLONliOtukmQ",
   },
   skipValidation: !!process.env.CI || !!process.env.SKIP_ENV_VALIDATION,
   emptyStringAsUndefined: true,

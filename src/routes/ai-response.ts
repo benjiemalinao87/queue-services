@@ -8,6 +8,10 @@ import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { addAIResponseJob, getQueueMetrics } from '@/queues/ai-response-queue';
 import { aiResponseSchema } from '@/queues/schemas/ai-response-schema';
 import { z } from 'zod';
+import { env } from '@/env';
+
+// Default callback URL using the SMS_API_URL from environment variables
+const DEFAULT_CALLBACK_URL = `${env.SMS_API_URL}/send-sms`;
 
 const aiResponseRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
   /**
@@ -18,7 +22,13 @@ const aiResponseRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =>
     Body: z.infer<typeof aiResponseSchema>;
   }>('/', async (request, reply) => {
     try {
-      const job = await addAIResponseJob(request.body);
+      // Ensure callback_url is set to default if not provided
+      const jobData = {
+        ...request.body,
+        callback_url: request.body.callback_url || DEFAULT_CALLBACK_URL
+      };
+      
+      const job = await addAIResponseJob(jobData);
       
       return {
         success: true,
@@ -56,7 +66,13 @@ const aiResponseRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =>
     Body: z.infer<typeof aiResponseSchema>;
   }>('/enqueue', async (request, reply) => {
     try {
-      const job = await addAIResponseJob(request.body);
+      // Ensure callback_url is set to default if not provided
+      const jobData = {
+        ...request.body,
+        callback_url: request.body.callback_url || DEFAULT_CALLBACK_URL
+      };
+      
+      const job = await addAIResponseJob(jobData);
 
       return {
         success: true,

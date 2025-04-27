@@ -1,8 +1,12 @@
 import { sendSMSWorker, scheduledSMSWorker, smsBatchWorker } from "./sms-worker";
 import { emailWorker, scheduledEmailWorker, emailBatchWorker } from "./email-worker";
-import { aiResponseWorker } from "./ai-response-worker";
+import { aiResponseWorker, startAIResponseSubscription, stopAIResponseSubscription } from "./ai-response-worker";
 import { Worker } from "bullmq";
 import { env } from "../env";
+
+// Start the Supabase subscription for AI responses
+startAIResponseSubscription();
+console.log("AI Response Supabase subscription initialized");
 
 // Use environment variables for Redis configuration
 // DO NOT hardcode credentials here
@@ -10,6 +14,9 @@ import { env } from "../env";
 // Handle graceful shutdown
 const gracefulShutdown = async () => {
   console.log("Shutting down workers...");
+  
+  // Stop Supabase subscription
+  stopAIResponseSubscription();
   
   // Close all workers
   await Promise.all([
@@ -45,5 +52,6 @@ console.log("Email Concurrency:", emailBatchWorker.opts.concurrency);
 console.log("Email Rate Limit:", emailBatchWorker.opts.limiter?.max, "per", emailBatchWorker.opts.limiter?.duration, "ms");
 console.log("AI Response Concurrency:", aiResponseWorker.opts.concurrency);
 console.log("AI Response Rate Limit:", aiResponseWorker.opts.limiter?.max, "per", aiResponseWorker.opts.limiter?.duration, "ms");
+console.log("AI Response Supabase Subscription: ACTIVE");
 
 export * from "./ai-response-worker";

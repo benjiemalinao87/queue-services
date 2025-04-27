@@ -568,7 +568,7 @@ The AI response queue provides a way to process user messages with AI and return
    - `contact_id` - Identifier for the contact/user
    - `message_id` - Unique identifier for the message
    - `message_text` - The actual user query to be processed
-   - `callback_url` - Where to send the AI's response
+   - `callback_url` - Where to send the AI's response (IMPORTANT: Always use `https://cc.automate8.com/send-sms` for production)
    - `rate_limit_key` - Used for rate limiting
 
 2. **Queue Processing**: The message is added to the `ai-response-queue` and picked up by the worker.
@@ -581,9 +581,11 @@ The AI response queue provides a way to process user messages with AI and return
 
 ### Implementation Notes
 
+- **Standard Callback URL**: In production environments, always use `https://cc.automate8.com/send-sms` as the callback URL. The system is configured to properly format messages for this endpoint.
+
 - **Callback Format Flexibility**: The worker supports different callback formats based on the endpoint:
   ```typescript
-  // For SMS endpoint
+  // For SMS endpoint (recommended production approach)
   {
     to: contactId,
     message: aiResponseText,
@@ -591,7 +593,7 @@ The AI response queue provides a way to process user messages with AI and return
     // Other SMS-specific fields
   }
 
-  // For dedicated AI response endpoint
+  // For dedicated AI response endpoint (non-standard)
   {
     workspace_id: workspaceId,
     message_id: messageId,
@@ -697,3 +699,81 @@ export const connection: ConnectionOptions = process.env.NODE_ENV === 'developme
 6. **Monitor Redis connection status** to quickly identify and resolve issues
 7. **Keep credentials in environment variables** rather than hardcoded
 8. **Test connection in different environments** before deployment
+
+## AI Response Queue Integration with Supabase Realtime
+
+### Supabase Realtime Subscription
+
+When implementing the AI Auto-Responder integration with Supabase Realtime, we learned several important lessons:
+
+1. **Realtime vs. Polling**: Supabase Realtime subscription provides immediate notification of new database records, making it significantly more responsive than traditional polling approaches. This results in faster processing of AI response requests.
+
+2. **Subscription Setup**: When setting up a Supabase Realtime subscription, it's crucial to:
+   - Specify the correct table name (`ai_response_queue`)
+   - Use appropriate filters (e.g., `status=eq.pending`)
+   - Handle subscription status events to ensure the channel is properly connected
+
+3. **Fallback Mechanism**: Even with Realtime subscription, implementing a fallback polling mechanism is recommended to catch any jobs that might be missed due to temporary connection issues.
+
+4. **Subscription Cleanup**: Always implement proper cleanup procedures for subscriptions to prevent memory leaks and resource consumption when stopping or restarting services.
+
+### Rate Limiting Implementation
+
+Implementing effective rate limiting for AI responses involves multiple strategies:
+
+1. **Concurrent Job Limiting**: Maintaining a counter of currently processing jobs prevents system overload:
+   ```typescript
+   // Track concurrent jobs
+   let currentlyProcessingJobs = 0;
+   
+   // Check before processing
+   if (currentlyProcessingJobs >= rateLimitConfig.maxConcurrent) {
+     return false;
+   }
+   
+   // Increment/decrement around processing
+   currentlyProcessingJobs++;
+   try {
+     // Process job
+   } finally {
+     currentlyProcessingJobs--;
+   }
+   ```
+
+2. **Composite Rate Limit Keys**: Using composite keys (e.g., `${workspace_id}:${contact_id}`) allows for more granular rate limiting at different levels.
+
+3. **Redis Sorted Sets**: Using Redis sorted sets with timestamps as scores enables efficient time-window-based rate limiting:
+   ```typescript
+   // Remove old entries
+   await redisClient.zremrangebyscore(rateLimitKey, 0, windowStart);
+   
+   // Get current count
+   const count = await redisClient.zcard(rateLimitKey);
+   
+   // Add new request
+   await redisClient.zadd(rateLimitKey, Date.now(), `${Date.now()}-${Math.random()}`);
+   ```
+
+### Job Status Management
+
+Managing job status effectively in the database is crucial for reliable processing:
+
+1. **Status Transitions**: Implementing clear status transitions (pending → processing → complete/error/failed) provides visibility into job processing.
+
+2. **Atomic Updates**: Using database transactions or RPC calls for status updates ensures data consistency, particularly when incrementing attempt counters.
+
+3. **Error Handling**: Recording detailed error information in the database helps with debugging and monitoring.
+
+4. **Retry Logic**: Implementing exponential backoff and maximum attempt limits prevents endless retries of problematic jobs.
+
+### Integration with Existing Queue Infrastructure
+
+When integrating a database-based queue with an existing BullMQ setup:
+
+1. **Dual Processing Support**: Maintaining the existing BullMQ worker alongside the Supabase Realtime subscription provides backward compatibility and ensures integration with monitoring tools like Bull Board.
+
+2. **Unified Rate Limiting**: Ensuring consistent rate limiting between both queue systems prevents overloading backend services.
+
+3. **Monitoring**: Adding additional logging and metrics for the new Supabase-based queue is essential for operational visibility.
+
+4. **Graceful Startup/Shutdown**: Implementing proper initialization and cleanup procedures for both queue systems ensures reliable operation during service lifecycle events.

@@ -9,9 +9,10 @@ import fetch from 'node-fetch';
 const API_URL = process.env.API_URL || 'https://secivres-eueuq.customerconnects.app';
 const AI_RESPONSE_ENDPOINT = '/api/ai-response';
 
-// For callback testing - using actual SMS endpoint
+// For callback testing - IMPORTANT: Always use the SMS endpoint as the standard callback
 const SMS_BACKEND_URL = 'https://cc.automate8.com';
 const SMS_ENDPOINT = '/send-sms';
+const CALLBACK_URL = `${SMS_BACKEND_URL}${SMS_ENDPOINT}`;
 
 // Test data provided by the user
 const testData = {
@@ -19,8 +20,8 @@ const testData = {
   contact_id: 'fc7b218e-ce7c-4317-8555-b62a91772598',
   message_id: `test-msg-${Date.now()}`,
   message_text: 'what is your services?',
-  // Using SMS endpoint as callback since it exists and is properly implemented
-  callback_url: `${SMS_BACKEND_URL}${SMS_ENDPOINT}`,
+  // IMPORTANT: Always use /send-sms as the callback URL in production
+  callback_url: CALLBACK_URL,
   rate_limit_key: '15213:fc7b218e-ce7c-4317-8555-b62a91772598'
 };
 
