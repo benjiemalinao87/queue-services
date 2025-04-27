@@ -935,3 +935,57 @@ These optimizations resulted in:
 3. Better resource utilization during idle periods
 4. Automatic cleanup of old job data to prevent memory growth over time
 5. Optimized Redis connections that use fewer resources
+
+## Balancing Memory Optimization and Stability in Redis Connections
+
+### Command Timeout Errors
+
+After optimizing the Redis connection settings for memory usage, we encountered command timeout errors in the logs:
+
+```
+Error: Command timed out
+at Timeout._onTimeout (/app/node_modules/.pnpm/ioredis@5.6.0/node_modules/ioredis/built/Command.js:192:33)
+at listOnTimeout (node:internal/timers:594:17)
+at process.processTimers (node:internal/timers:529:7)
+```
+
+### Root Cause
+
+The aggressive timeout and connection settings we implemented to reduce memory footprint were too restrictive for the actual workload:
+
+1. **Short Command Timeouts**: Setting `commandTimeout: 5000` (5 seconds) was insufficient for some operations in production
+2. **Disabled Features**: Disabling `autoResubscribe` and `autoResendUnfulfilledCommands` saved memory but reduced resilience
+3. **Lazy Connect**: Using `lazyConnect: true` delayed connection establishment, causing timing issues
+
+### Solution - Finding the Right Balance
+
+We adjusted the Redis configuration to balance memory optimization with stability:
+
+```typescript
+const commonOptions = {
+  // Stability-focused settings
+  enableReadyCheck: true,
+  maxRetriesPerRequest: 5,
+  connectTimeout: 15000,      // Increased from 5000ms to 15000ms
+  commandTimeout: 15000,      // Increased from 5000ms to 15000ms
+  autoResubscribe: true,      // Re-enabled for stability
+  autoResendUnfulfilledCommands: true, // Re-enabled for stability
+  lazyConnect: false,         // Connect immediately
+  
+  // Memory optimizations we kept
+  showFriendlyErrorStack: false,
+  
+  // Improved retry strategy
+  retryStrategy: (times) => Math.min(times * 200, 5000),
+};
+```
+
+### Lessons Learned
+
+1. **Testing Under Load**: Memory optimizations should be tested under realistic loads before deployment
+2. **Gradual Optimization**: It's better to optimize gradually, monitoring impacts between changes
+3. **Balance is Key**: Memory optimization must be balanced with stability and reliability
+4. **Error Monitoring**: Close monitoring of errors after deployment allows for quick adjustments
+5. **Timeout Requirements**: Different environments may need different timeout settings - what works in development may fail in production
+
+The right approach is to start with conservative settings that ensure stability, then incrementally optimize while monitoring for errors.
