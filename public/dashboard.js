@@ -219,6 +219,15 @@ document.addEventListener('DOMContentLoaded', function() {
         return response.json();
       })
       .then(data => {
+        // Log the response to help debug data structure issues
+        console.log('Metrics API Response:', data);
+        
+        // Normalize data structure if needed
+        if (data && !data.sms) {
+          console.warn('Unexpected API response structure, attempting to normalize...');
+          data = normalizeApiResponse(data);
+        }
+        
         updateDashboard(data);
         
         // Remove loading state
@@ -249,6 +258,55 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   /**
+   * Normalize API response to expected structure
+   * This helps handle changes in the API response format
+   */
+  function normalizeApiResponse(data) {
+    const normalized = {
+      sms: {
+        workspaceRateLimits: [],
+        workspaceMetrics: []
+      },
+      email: {
+        workspaceRateLimits: [],
+        workspaceMetrics: []
+      },
+      timestamp: data.timestamp || new Date()
+    };
+
+    // Handle different possible response structures
+    if (data.sms && Array.isArray(data.sms.workspaceRateLimits)) {
+      normalized.sms.workspaceRateLimits = data.sms.workspaceRateLimits;
+    }
+    
+    if (data.sms && Array.isArray(data.sms.workspaceMetrics)) {
+      normalized.sms.workspaceMetrics = data.sms.workspaceMetrics;
+    }
+    
+    if (data.email && Array.isArray(data.email.workspaceRateLimits)) {
+      normalized.email.workspaceRateLimits = data.email.workspaceRateLimits;
+    }
+    
+    if (data.email && Array.isArray(data.email.workspaceMetrics)) {
+      normalized.email.workspaceMetrics = data.email.workspaceMetrics;
+    }
+
+    // If we have global metrics, copy them
+    ['totalProcessed', 'batchesProcessed', 'successCount', 'failureCount', 
+     'rateExceededCount', 'avgProcessingTime', 'throughput', 'lastProcessedTime'].forEach(key => {
+      if (data.sms && data.sms[key] !== undefined) {
+        normalized.sms[key] = data.sms[key];
+      }
+      if (data.email && data.email[key] !== undefined) {
+        normalized.email[key] = data.email[key];
+      }
+    });
+
+    console.log('Normalized API response:', normalized);
+    return normalized;
+  }
+
+  /**
    * Update dashboard with new data
    */
   function updateDashboard(data) {
@@ -263,6 +321,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Update charts
     updateCharts(data);
+    
+    // Add event listeners to buttons
+    addWorkspaceButtonListeners();
   }
 
   /**
@@ -343,7 +404,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const workspaces = new Map();
     
     // Add SMS workspaces
-    if (data.sms && data.sms.workspaceRateLimits) {
+    if (data.sms && Array.isArray(data.sms.workspaceRateLimits)) {
       data.sms.workspaceRateLimits.forEach(workspace => {
         // Transform the workspace ID
         const actualWorkspaceId = transformWorkspaceId(workspace.workspaceId);
@@ -359,7 +420,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Add or update with Email workspaces
-    if (data.email && data.email.workspaceRateLimits) {
+    if (data.email && Array.isArray(data.email.workspaceRateLimits)) {
       data.email.workspaceRateLimits.forEach(workspace => {
         // Transform the workspace ID
         const actualWorkspaceId = transformWorkspaceId(workspace.workspaceId);
@@ -418,9 +479,6 @@ document.addEventListener('DOMContentLoaded', function() {
         tableBody.appendChild(row);
       });
     }
-    
-    // Add event listeners to buttons
-    addWorkspaceButtonListeners();
   }
 
   /**
@@ -439,7 +497,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const workspaces = new Map();
     
     // Add SMS workspaces
-    if (data.sms && data.sms.workspaceMetrics) {
+    if (data.sms && Array.isArray(data.sms.workspaceMetrics)) {
       data.sms.workspaceMetrics.forEach(workspace => {
         // Transform the workspace ID
         const actualWorkspaceId = transformWorkspaceId(workspace.workspaceId);
@@ -461,7 +519,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Add or update with Email workspaces
-    if (data.email && data.email.workspaceMetrics) {
+    if (data.email && Array.isArray(data.email.workspaceMetrics)) {
       data.email.workspaceMetrics.forEach(workspace => {
         // Transform the workspace ID
         const actualWorkspaceId = transformWorkspaceId(workspace.workspaceId);
@@ -548,9 +606,6 @@ document.addEventListener('DOMContentLoaded', function() {
         tableBody.appendChild(row);
       });
     }
-    
-    // Add event listeners to buttons
-    addWorkspaceButtonListeners();
   }
 
   /**
