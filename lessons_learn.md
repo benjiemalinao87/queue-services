@@ -996,3 +996,10 @@ The right approach is to start with conservative settings that ensure stability,
 - - Dashboard statistics must collect data from all queue types (immediate and scheduled)
 - - Proper error detection improves reliability and monitoring capabilities
 
+
+## Fix metrics tracking for scheduled SMS messages (May 07, 2025)
+- - Metrics tracking needs to be added to all worker types that process messages
+- - Worker implementations should follow consistent patterns for metrics
+- - Dashboard statistics must collect data from all queue types (immediate and scheduled)
+- - Proper error detection improves reliability and monitoring capabilities
+
