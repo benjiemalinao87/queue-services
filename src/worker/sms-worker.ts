@@ -103,6 +103,9 @@ export const scheduledSMSWorker = new Worker(
   async (job: Job<SMSData>) => {
     const { phoneNumber, message, scheduledFor, contactId, workspaceId, metadata } = job.data;
     
+    // Start metrics tracking for this scheduled job
+    const completeMetrics = startBatchProcessing('sms');
+    
     // Log the job start
     console.log(`Processing scheduled SMS job ${job.id} to ${phoneNumber}`);
     console.log(`Originally scheduled for: ${scheduledFor}`);
@@ -126,6 +129,10 @@ export const scheduledSMSWorker = new Worker(
       
       console.log(`Successfully sent scheduled SMS to ${phoneNumber}`, result);
       
+      // Update metrics for the successful scheduled SMS delivery
+      // Count as 1 message, success=true, no rate exceeded, include workspaceId if available
+      completeMetrics(1, true, false, workspaceId);
+      
       // Update job progress to complete
       await job.updateProgress(100);
       
@@ -142,6 +149,15 @@ export const scheduledSMSWorker = new Worker(
     } catch (error) {
       // Log the error
       console.error(`Error sending scheduled SMS to ${phoneNumber}:`, error);
+      
+      // Update metrics for the failed scheduled SMS delivery
+      // Check if this is a rate limit error
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const isRateLimitError = errorMessage.toLowerCase().includes('rate limit') || 
+                              errorMessage.toLowerCase().includes('too many requests');
+      
+      // Count as 1 message, success=false, rate exceeded based on error message, include workspaceId if available
+      completeMetrics(1, false, isRateLimitError, workspaceId, errorMessage);
       
       // Throw the error to trigger job failure and retry
       throw error;

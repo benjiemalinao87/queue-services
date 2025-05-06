@@ -3,8 +3,17 @@ import { SMSData } from "./queues/schemas";
 import { env } from "./env";
 import fetch from "node-fetch";
 
-// Redis connection URL from Railway
-const REDIS_URL = "redis://default:fbYziATslDdWOVGqlpsXPZThAwbSzbgz@caboose.proxy.rlwy.net:58064";
+// Railway proxy details for Redis connection
+const RAILWAY_PROXY_HOST = "caboose.proxy.rlwy.net";
+const RAILWAY_PROXY_PORT = 58064;
+const REDIS_PASSWORD = process.env.REDIS_PASSWORD || "fbYziATslDdWOVGqlpsXPZThAwbSzbgz";
+
+// Connection configuration that works with our other tests
+const connection = {
+  host: RAILWAY_PROXY_HOST,
+  port: RAILWAY_PROXY_PORT,
+  password: REDIS_PASSWORD,
+};
 
 // Function to send SMS via the API
 async function sendSMSViaAPI(data: SMSData) {
@@ -46,7 +55,7 @@ async function testDelayedSMS() {
   
   try {
     // Create a queue for the test
-    const testQueue = new Queue("test-delayed-sms", { connection: REDIS_URL });
+    const testQueue = new Queue("test-delayed-sms", { connection });
     
     console.log("Queue created successfully");
     
@@ -64,7 +73,7 @@ async function testDelayedSMS() {
         console.error("Error sending SMS:", error);
         throw error;
       }
-    }, { connection: REDIS_URL });
+    }, { connection });
     
     console.log("Worker created successfully");
     
@@ -77,11 +86,11 @@ async function testDelayedSMS() {
       console.error(`Job ${job?.id} has failed with error ${err.message}`);
     });
     
-    // Calculate time for 1 minute from now
+    // Calculate time for 5 minutes from now
     const now = new Date();
-    const oneMinuteFromNow = new Date(now.getTime() + 60 * 1000);
+    const fiveMinutesFromNow = new Date(now.getTime() + 300000);
     
-    console.log(`Scheduling SMS for: ${oneMinuteFromNow.toISOString()}`);
+    console.log(`Scheduling SMS for: ${fiveMinutesFromNow.toISOString()}`);
     
     // Add a delayed job
     const job = await testQueue.add("delayed-sms", {
@@ -94,15 +103,15 @@ async function testDelayedSMS() {
         timestamp: now.toISOString()
       }
     }, {
-      delay: 60000 // 1 minute delay
+      delay: 300000 // 5 minutes delay
     });
     
     console.log(`Successfully added delayed SMS job: ${job.id}`);
-    console.log(`Job will be processed at approximately: ${oneMinuteFromNow.toISOString()}`);
+    console.log(`Job will be processed at approximately: ${fiveMinutesFromNow.toISOString()}`);
     
-    // Keep the process running for 2 minutes to allow the job to be processed
-    console.log("Waiting for the job to be processed (2 minutes)...");
-    await new Promise(resolve => setTimeout(resolve, 120000));
+    // Keep the process running for 6 minutes to allow the job to be processed
+    console.log("Waiting for the job to be processed (6 minutes)...");
+    await new Promise(resolve => setTimeout(resolve, 360000));
     
     // Clean up
     console.log("Cleaning up...");

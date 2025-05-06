@@ -3,11 +3,11 @@ import fetch from 'node-fetch';
 import { randomUUID } from 'crypto';
 
 // Configuration
-const QUEUE_SERVICE_URL = process.env.QUEUE_SERVICE_URL || "https://cc.automate8.com"; // Use the known base URL
-const WORKSPACE_ID = '15213'; // Updated to user's workspace
-const TEST_PHONE = '+16266635938'; // Updated to user's phone
-const TEST_CONTACT_ID = '97241048-3d5f-4236-90c6-de499ccd6462'; // Updated to user's contact ID
-const TEST_EMAIL = 'benjiemalinao87@gmail.com'; // Added user's email
+const QUEUE_SERVICE_URL = process.env.QUEUE_SERVICE_URL || "https://secivres-eueuq.customerconnects.app"; // Updated to production domain
+const WORKSPACE_ID = '15213'; // User's workspace
+const TEST_PHONE = '+16266635938'; // User's phone
+const TEST_CONTACT_ID = '97241048-3d5f-4236-90c6-de499ccd6462'; // User's contact ID
+const TEST_EMAIL = 'benjiemalinao87@gmail.com'; // User's email
 
 // Get current time
 const now = new Date();
@@ -43,8 +43,8 @@ async function testQueueMMS() {
     console.log("Test data:", testData);
     
     // Send the request to the queue service API endpoint
-    console.log(`Sending request to ${QUEUE_SERVICE_URL}/send-sms`);
-    const response = await fetch(`${QUEUE_SERVICE_URL}/send-sms`, {
+    console.log(`Sending request to ${QUEUE_SERVICE_URL}/api/schedule-sms`);
+    const response = await fetch(`${QUEUE_SERVICE_URL}/api/schedule-sms`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

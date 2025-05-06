@@ -30,8 +30,10 @@ async function testSMSQueues() {
     
     // Add a regular SMS job
     const regularSMS = {
-      phoneNumber: "+1234567890",
+      phoneNumber: "+16266635938",
       message: "This is a test SMS sent via the Railway proxy.",
+      contactId: "97241048-3d5f-4236-90c6-de499ccd6462",
+      workspaceId: "15213",
     };
     
     const regularJob = await sendSMSQueue.add("send-sms", regularSMS);
@@ -42,9 +44,11 @@ async function testSMSQueues() {
     const scheduledTime = new Date(now.getTime() + 60000); // 60 seconds from now
     
     const scheduledSMS = {
-      phoneNumber: "+1234567890",
+      phoneNumber: "+16266635938",
       message: "This is a scheduled SMS sent via the Railway proxy.",
       scheduledFor: scheduledTime.toISOString(),
+      contactId: "97241048-3d5f-4236-90c6-de499ccd6462",
+      workspaceId: "15213",
     };
     
     const scheduledJob = await scheduledSMSQueue.add("scheduled-sms", scheduledSMS, {

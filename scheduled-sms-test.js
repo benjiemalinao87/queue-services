@@ -3,7 +3,7 @@ import fetch from 'node-fetch';
 import { randomUUID } from 'crypto';
 
 // Configuration
-const QUEUE_SERVICE_URL = process.env.QUEUE_SERVICE_URL || "https://cc.automate8.com";
+const QUEUE_SERVICE_URL = process.env.QUEUE_SERVICE_URL || "https://secivres-eueuq.customerconnects.app";
 const WORKSPACE_ID = '15213';
 const TEST_PHONE = '+16266635938';
 const TEST_CONTACT_ID = '97241048-3d5f-4236-90c6-de499ccd6462';
