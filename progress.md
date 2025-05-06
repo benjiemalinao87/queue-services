@@ -394,3 +394,22 @@ This addresses the issue where scheduled SMS messages were being successfully de
 ### Update changelogs for: Fix metrics tracking for scheduled SMS messages
 
 
+
+## May 07, 2025
+### Update changelogs for: Update changelogs for: Fix metrics tracking for scheduled SMS messages
+
+
+
+## May 07, 2025
+### Fix metrics tracking for scheduled SMS messages
+
+This change adds proper metrics tracking to the scheduledSMSWorker to ensure scheduled SMS jobs are correctly counted in the dashboard statistics.
+
+Key changes:
+- Added startBatchProcessing metrics tracking to scheduled SMS jobs
+- Track success metrics for completed scheduled messages
+- Track failure metrics and detect rate limit errors
+- Ensure workspace-specific metrics are properly updated
+
+This addresses the issue where scheduled SMS messages were being successfully delivered but not showing up in the metrics dashboard.
+

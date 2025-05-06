@@ -989,3 +989,10 @@ const commonOptions = {
 5. **Timeout Requirements**: Different environments may need different timeout settings - what works in development may fail in production
 
 The right approach is to start with conservative settings that ensure stability, then incrementally optimize while monitoring for errors.
+
+## Fix metrics tracking for scheduled SMS messages (May 07, 2025)
+- - Metrics tracking needs to be added to all worker types that process messages
+- - Worker implementations should follow consistent patterns for metrics
+- - Dashboard statistics must collect data from all queue types (immediate and scheduled)
+- - Proper error detection improves reliability and monitoring capabilities
+
