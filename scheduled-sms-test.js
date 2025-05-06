@@ -3,15 +3,15 @@ import fetch from 'node-fetch';
 import { randomUUID } from 'crypto';
 
 // Configuration
-const QUEUE_SERVICE_URL = process.env.QUEUE_SERVICE_URL || "https://secivres-eueuq.customerconnects.app";
+const QUEUE_SERVICE_URL = process.env.QUEUE_SERVICE_URL || "https://cc.automate8.com";
 const WORKSPACE_ID = '15213';
 const TEST_PHONE = '+16266635938';
 const TEST_CONTACT_ID = '97241048-3d5f-4236-90c6-de499ccd6462';
 const TEST_EMAIL = 'benjiemalinao87@gmail.com';
 
-// Schedule time (3 minutes from now)
+// Schedule time (5 minutes from now)
 const now = new Date();
-const scheduledTime = new Date(now.getTime() + 3 * 60000); // 3 minutes in the future
+const scheduledTime = new Date(now.getTime() + 5 * 60000); // 5 minutes in the future
 const timestamp = now.toISOString();
 const scheduledTimeIso = scheduledTime.toISOString();
 
@@ -30,7 +30,7 @@ async function testScheduledSMS() {
       workspaceId: WORKSPACE_ID,
       // Use scheduledFor for the timestamp when the message should be sent
       scheduledFor: scheduledTimeIso,
-      delay: 3 * 60000, // 3 minutes in milliseconds
+      delay: 5 * 60000, // 5 minutes in milliseconds
       metadata: {
         source: 'scheduled_sms_test',
         campaignId: randomUUID(),
@@ -61,7 +61,7 @@ async function testScheduledSMS() {
       console.log('✅ Scheduled SMS queued successfully!');
       console.log(`Job ID: ${result.jobId}`);
       console.log(`The message is scheduled to be sent at: ${scheduledTimeIso}`);
-      console.log(`(That's approximately ${Math.round(3)} minutes from now)`);
+      console.log(`(That's approximately ${Math.round(5)} minutes from now)`);
     } else {
       console.error('❌ Scheduled SMS queuing failed!');
     }

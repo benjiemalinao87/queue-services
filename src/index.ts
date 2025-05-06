@@ -5,6 +5,7 @@ import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
 import path from "path";
 import { fileURLToPath } from "url";
+import crypto from "crypto";
 import { sendEmailQueue, scheduledEmailQueue } from "./queues/email-queue";
 import { myQueue } from "./queues/my-queue";
 import { sendSMSQueue, scheduledSMSQueue } from "./queues/sms-queue";
@@ -214,16 +215,41 @@ fastify.post<{
       });
     }
     
-    // Prepare SMS data
+    // Generate a unique message ID for tracking
+    const messageId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
+    
+    // Calculate scheduledFor timestamp if delay is provided
+    const now = new Date();
+    const scheduledFor = delay && delay > 0 
+      ? new Date(now.getTime() + delay).toISOString() 
+      : now.toISOString();
+    
+    // Prepare SMS data with all fields needed for metrics tracking
     const smsData = {
       phoneNumber,
       message,
       contactId,
       workspaceId,
-      metadata: metadata || {
-        source: "test-ui",
-        timestamp: new Date().toISOString(),
-      },
+      // Add scheduledFor which is needed by the worker for metrics
+      scheduledFor,
+      // Add explicit trackMetrics flag
+      trackMetrics: true,
+      // Ensure metadata is properly structured with tracking info
+      metadata: {
+        ...(metadata || {}),
+        source: metadata?.source || "api-schedule-sms",
+        timestamp: now.toISOString(),
+        messageId,
+        // Add callback information similar to email implementation
+        callbackEndpoint: "/api/sms/callback",
+        // Include tracking information for metrics
+        tracking: {
+          messageId,
+          workspaceId,
+          contactId,
+          trackMetrics: true
+        }
+      }
     };
     
     let job;
@@ -236,7 +262,7 @@ fastify.post<{
         removeOnComplete: false,
       });
       
-      fastify.log.info(`Scheduled SMS job added with ID: ${job.id}, delay: ${delay}ms`);
+      fastify.log.info(`Scheduled SMS job added with ID: ${job.id}, delay: ${delay}ms, scheduled for: ${scheduledFor}`);
     } else {
       // Add to immediate queue
       job = await sendSMSQueue.add("send-sms", smsData, {
