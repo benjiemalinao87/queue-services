@@ -1,13 +1,13 @@
 // Test script to send MMS via the queue service API endpoint
 import fetch from 'node-fetch';
 import { randomUUID } from 'crypto';
-import { env } from './src/env.js';
 
 // Configuration
-const QUEUE_SERVICE_URL = process.env.QUEUE_SERVICE_URL || env.QUEUE_SERVICE_URL;
-const WORKSPACE_ID = '66338';
-const TEST_PHONE = '+16267888830';
-const TEST_CONTACT_ID = '2d3f28ca-1cd5-4d41-89bb-04b605401e72';
+const QUEUE_SERVICE_URL = process.env.QUEUE_SERVICE_URL || "https://cc.automate8.com"; // Use the known base URL
+const WORKSPACE_ID = '15213'; // Updated to user's workspace
+const TEST_PHONE = '+16266635938'; // Updated to user's phone
+const TEST_CONTACT_ID = '97241048-3d5f-4236-90c6-de499ccd6462'; // Updated to user's contact ID
+const TEST_EMAIL = 'benjiemalinao87@gmail.com'; // Added user's email
 
 // Get current time
 const now = new Date();
@@ -20,7 +20,7 @@ async function testQueueMMS() {
   try {
     // Prepare the test data for the queue service API
     const testData = {
-      phoneNumber: TEST_PHONE,
+      to: TEST_PHONE,
       message: `This is a test MMS sent via queue service at: ${timestamp}`,
       contactId: TEST_CONTACT_ID,
       workspaceId: WORKSPACE_ID,
@@ -34,6 +34,7 @@ async function testQueueMMS() {
         source: 'queue_service_test',
         campaignId: randomUUID(),
         messageId: randomUUID(),
+        email: TEST_EMAIL,
         scheduledTime: timestamp,
         timestamp: timestamp
       }
@@ -42,8 +43,8 @@ async function testQueueMMS() {
     console.log("Test data:", testData);
     
     // Send the request to the queue service API endpoint
-    console.log(`Sending request to ${QUEUE_SERVICE_URL}/api/schedule-sms`);
-    const response = await fetch(`${QUEUE_SERVICE_URL}/api/schedule-sms`, {
+    console.log(`Sending request to ${QUEUE_SERVICE_URL}/send-sms`);
+    const response = await fetch(`${QUEUE_SERVICE_URL}/send-sms`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

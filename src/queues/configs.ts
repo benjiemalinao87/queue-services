@@ -19,8 +19,9 @@ const commonOptions = {
   enableReadyCheck: true, // Re-enable ready check for stability
   maxRetriesPerRequest: 5, // Increase max retries 
   retryStrategy: (times: number) => {
-    const delay = Math.min(times * 200, 5000); // Increase delay with each retry, max 5s
-    if (times < 5) { // Only log initial retries to reduce log spam
+    // More aggressive backoff - start at 500ms and increase exponentially
+    const delay = Math.min(Math.pow(2, times) * 500, 10000); // Start at 500ms, max 10s
+    if (times < 5) {
       console.log(`Redis connection retry attempt ${times} with delay ${delay}ms`);
     }
     return delay;
