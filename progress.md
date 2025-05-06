@@ -374,3 +374,23 @@ Key changes:
 
 This addresses the issue where scheduled SMS messages were being successfully delivered but not showing up in the metrics dashboard.
 
+
+## May 07, 2025
+### Update changelogs for: Fix metrics tracking for scheduled SMS messages
+
+
+
+## May 07, 2025
+### Update changelogs for: Fix metrics tracking for scheduled SMS messages
+
+
+
+## May 07, 2025
+### Update changelogs for: Fix metrics tracking for scheduled SMS messages
+
+
+
+## May 07, 2025
+### Update changelogs for: Fix metrics tracking for scheduled SMS messages
+
+
