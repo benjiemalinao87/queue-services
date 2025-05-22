@@ -1006,26 +1006,3 @@ The right approach is to start with conservative settings that ensure stability,
 
 ## Fix SMS metrics tracking by adding required fields for proper worker integration (May 7, 2025)
 
-
-## Redis Connection in Railway Environment
-
-### Problem
-When running in Railway's production environment, the queues were not visible in Bull Board because:
-1. The Redis connection was incorrectly using the proxy configuration in production
-2. The internal Redis connection details were not properly configured
-
-### Solution
-1. Use different Redis connection configurations for development and production:
-   - Development: Use Railway proxy (caboose.proxy.rlwy.net) for local access
-   - Production: Use internal Redis connection (redis.railway.internal)
-2. Set proper credentials:
-   - Username should be 'default' in Railway
-   - Use the correct Redis password from environment variables
-
-### Best Practices
-1. Always use internal hostnames in Railway production environment
-2. Use proxy only for local development
-3. Double-check Redis credentials and connection details
-4. Monitor Redis connection status through logs
-5. Implement proper retry strategies with exponential backoff
-

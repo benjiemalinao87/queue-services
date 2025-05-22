@@ -27,7 +27,7 @@ const QUEUE_SERVICE_URL = process.env.QUEUE_SERVICE_URL || 'https://secivres-eue
 const WORKSPACE_ID = process.env.TEST_WORKSPACE_ID || '15213'; // Updated with your actual workspace ID
 const TEST_EMAIL = process.env.TEST_EMAIL || 'benjiemalinao87@gmail.com'; // Updated with your actual email
 const TEST_PHONE = process.env.TEST_PHONE || '+16266635938'; // Updated with your actual phone number
-const TEST_CONTACT_ID = process.env.TEST_CONTACT_ID || 'fc7b218e-ce7c-4317-8555-b62a91772598';
+const TEST_CONTACT_ID = process.env.TEST_CONTACT_ID || '97241048-3d5f-4236-90c6-de499ccd6462';
 
 // Create readline interface for interactive mode
 const rl = readline.createInterface({

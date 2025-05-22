@@ -6,15 +6,10 @@ import type {
   JobsOptions,
 } from "bullmq";
 import { env } from "@/env";
-import { waitForRedisReady } from "@/utils/waitForRedisReady";
 
 // Railway proxy details (for local development and testing)
 const RAILWAY_PROXY_HOST = 'caboose.proxy.rlwy.net';
 const RAILWAY_PROXY_PORT = 58064;
-
-// Internal Redis details for production
-const INTERNAL_REDIS_HOST = 'redis.railway.internal';
-const INTERNAL_REDIS_PORT = 6379;
 
 // Determine which connection to use based on environment
 const isLocalDev = env.NODE_ENV === 'development';
@@ -60,10 +55,10 @@ export const connection: ConnectionOptions = isLocalDev
       ...commonOptions,
     }
   : {
-      // For production in Railway, use internal connection
-      host: INTERNAL_REDIS_HOST,
-      port: INTERNAL_REDIS_PORT,
-      username: 'default', // Railway Redis uses 'default' as username
+      // For production in Railway, try the TCP proxy since internal connection is failing
+      host: RAILWAY_PROXY_HOST, // Using the proxy that we confirmed works
+      port: RAILWAY_PROXY_PORT,  // Using the port that we confirmed works
+      username: env.REDIS_USER,
       password: env.REDIS_PASSWORD,
       ...commonOptions,
     };
@@ -74,19 +69,6 @@ if (isLocalDev) {
   console.log(`Host: ${connection.host}, Port: ${connection.port}`);
   console.log(`Username: ${connection.username || 'not set'}`);
   console.log(`Common options: connectTimeout=${commonOptions.connectTimeout}ms, maxRetries=${commonOptions.maxRetriesPerRequest}`);
-}
-
-// Ensure Redis is ready before creating any queues
-let redisReady = false;
-
-export async function ensureRedisReady() {
-  if (!redisReady) {
-    redisReady = await waitForRedisReady();
-    if (!redisReady) {
-      throw new Error('Failed to connect to Redis after multiple retries');
-    }
-  }
-  return redisReady;
 }
 
 export const createJobOptions = (
@@ -112,26 +94,24 @@ export const createJobOptions = (
 };
 export const defaultJobOptions = createJobOptions();
 
-export const createQueueOpts = async (
+export const createQueueOpts = (
   opts?: Omit<QueueOptions, "connection">,
-): Promise<QueueOptions> => {
-  await ensureRedisReady(); // Ensure Redis is ready before creating queue
+): QueueOptions => {
   return {
     defaultJobOptions,
     ...opts,
     connection,
   };
 };
-export const defaultQueueOpts = await createQueueOpts();
+export const defaultQueueOpts = createQueueOpts();
 
-export const createWorkerOpts = async (
+export const createWorkerOpts = (
   opts?: Omit<WorkerOptions, "connection">,
-): Promise<WorkerOptions> => {
-  await ensureRedisReady(); // Ensure Redis is ready before creating worker
+): WorkerOptions => {
   return {
     concurrency: env.NODE_ENV === "production" ? 5 : 10, // Reduce concurrency in production
     ...opts,
     connection,
   };
 };
-export const defaultWorkerOpts = await createWorkerOpts();
+export const defaultWorkerOpts = createWorkerOpts();
