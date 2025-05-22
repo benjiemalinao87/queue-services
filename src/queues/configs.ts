@@ -6,6 +6,7 @@ import type {
   JobsOptions,
 } from "bullmq";
 import { env } from "@/env";
+import { waitForRedisReady } from "@/utils/waitForRedisReady";
 
 // Railway proxy details (for local development and testing)
 const RAILWAY_PROXY_HOST = 'caboose.proxy.rlwy.net';
@@ -71,6 +72,19 @@ if (isLocalDev) {
   console.log(`Common options: connectTimeout=${commonOptions.connectTimeout}ms, maxRetries=${commonOptions.maxRetriesPerRequest}`);
 }
 
+// Ensure Redis is ready before creating any queues
+let redisReady = false;
+
+export async function ensureRedisReady() {
+  if (!redisReady) {
+    redisReady = await waitForRedisReady();
+    if (!redisReady) {
+      throw new Error('Failed to connect to Redis after multiple retries');
+    }
+  }
+  return redisReady;
+}
+
 export const createJobOptions = (
   opts?: DefaultJobOptions,
 ): DefaultJobOptions => {
@@ -94,24 +108,26 @@ export const createJobOptions = (
 };
 export const defaultJobOptions = createJobOptions();
 
-export const createQueueOpts = (
+export const createQueueOpts = async (
   opts?: Omit<QueueOptions, "connection">,
-): QueueOptions => {
+): Promise<QueueOptions> => {
+  await ensureRedisReady(); // Ensure Redis is ready before creating queue
   return {
     defaultJobOptions,
     ...opts,
     connection,
   };
 };
-export const defaultQueueOpts = createQueueOpts();
+export const defaultQueueOpts = await createQueueOpts();
 
-export const createWorkerOpts = (
+export const createWorkerOpts = async (
   opts?: Omit<WorkerOptions, "connection">,
-): WorkerOptions => {
+): Promise<WorkerOptions> => {
+  await ensureRedisReady(); // Ensure Redis is ready before creating worker
   return {
     concurrency: env.NODE_ENV === "production" ? 5 : 10, // Reduce concurrency in production
     ...opts,
     connection,
   };
 };
-export const defaultWorkerOpts = createWorkerOpts();
+export const defaultWorkerOpts = await createWorkerOpts();

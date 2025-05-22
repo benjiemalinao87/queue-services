@@ -1003,3 +1003,41 @@ The right approach is to start with conservative settings that ensure stability,
 - - Dashboard statistics must collect data from all queue types (immediate and scheduled)
 - - Proper error detection improves reliability and monitoring capabilities
 
+
+## Fix SMS metrics tracking by adding required fields for proper worker integration (May 7, 2025)
+
+
+## Redis Connection Handling
+
+### Problem
+Redis connection timeouts and "Command timed out" errors can occur when:
+- The application starts before Redis is fully ready to accept connections
+- Initial commands (like ping) are sent too early
+- Docker containers or cloud services have race conditions during startup
+
+### Solution
+1. Implemented a `waitForRedisReady` utility that:
+   - Attempts to connect to Redis with exponential backoff
+   - Uses a separate connection for health checks
+   - Has configurable retry attempts and timeouts
+   - Properly closes connections after checks
+
+2. Modified queue configuration to:
+   - Check Redis readiness before creating queues/workers
+   - Use async initialization for queue options
+   - Cache the readiness state to avoid redundant checks
+
+### Best Practices
+- Always verify Redis is ready before initializing queues
+- Use exponential backoff for retries
+- Keep health check connections separate from main queue connections
+- Clean up health check connections properly
+- Set appropriate timeouts for different environments
+
+### What Not To Do
+- Don't remove health checks entirely
+- Don't use infinite retry loops
+- Don't keep health check connections open
+- Don't ignore connection cleanup
+- Don't use fixed delays between retries
+
