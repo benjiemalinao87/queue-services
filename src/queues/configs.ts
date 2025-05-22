@@ -12,6 +12,10 @@ import { waitForRedisReady } from "@/utils/waitForRedisReady";
 const RAILWAY_PROXY_HOST = 'caboose.proxy.rlwy.net';
 const RAILWAY_PROXY_PORT = 58064;
 
+// Internal Redis details for production
+const INTERNAL_REDIS_HOST = 'redis.railway.internal';
+const INTERNAL_REDIS_PORT = 6379;
+
 // Determine which connection to use based on environment
 const isLocalDev = env.NODE_ENV === 'development';
 
@@ -56,10 +60,10 @@ export const connection: ConnectionOptions = isLocalDev
       ...commonOptions,
     }
   : {
-      // For production in Railway, try the TCP proxy since internal connection is failing
-      host: RAILWAY_PROXY_HOST, // Using the proxy that we confirmed works
-      port: RAILWAY_PROXY_PORT,  // Using the port that we confirmed works
-      username: env.REDIS_USER,
+      // For production in Railway, use internal connection
+      host: INTERNAL_REDIS_HOST,
+      port: INTERNAL_REDIS_PORT,
+      username: 'default', // Railway Redis uses 'default' as username
       password: env.REDIS_PASSWORD,
       ...commonOptions,
     };
